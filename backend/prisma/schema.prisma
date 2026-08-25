@@ -1,0 +1,358 @@
+// Prisma Schema for Business Development CRM
+// Supports SQLite (local zero-setup) and PostgreSQL (production)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  passwordHash         String
+  name                 String
+  role                 String    @default("BD_EXECUTIVE") // ADMIN, MANAGER, BD_EXECUTIVE, VIEWER
+  notificationEmail    String?
+  countryCode          String?   @default("+92")
+  phone                String?
+  whatsapp             String?
+  whatsappNumber       String?
+  status               String    @default("ACTIVE") // ACTIVE, INACTIVE
+  forcePasswordChange  Boolean   @default(false)
+  lastLoginAt          DateTime?
+  avatar               String?
+  active               Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  assignedClients       Client[]                 @relation("AssignedUser")
+  assignedMeetings      Meeting[]                @relation("MeetingAssignedUser")
+  createdMeetings       Meeting[]                @relation("MeetingCreatedByUser")
+  assignedFollowups     Followup[]               @relation("FollowupAssignedUser")
+  assignedTasks         Task[]                   @relation("TaskAssignedUser")
+  assignedOpportunities Opportunity[]            @relation("OpportunityAssignedUser")
+  activities            Activity[]
+  notifications         Notification[]
+  notificationLogs      NotificationLog[]
+  preferences           NotificationPreference?
+  auditLogs             AuditLog[]
+  aiConversations       AIConversation[]
+
+  @@map("users")
+}
+
+model NotificationPreference {
+  id                        String   @id @default(uuid())
+  userId                    String   @unique
+  emailEnabled              Boolean  @default(true)
+  whatsappEnabled           Boolean  @default(true)
+  browserEnabled            Boolean  @default(true)
+  inAppEnabled              Boolean  @default(true)
+  meetingReminders          Boolean  @default(true)
+  followupReminders         Boolean  @default(true)
+  taskReminders             Boolean  @default(true)
+  meetingReminderLeadHours  Int      @default(24)
+  followupReminderLeadHours Int      @default(24)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  industry  String?
+  website   String?
+  address   String?
+  city      String?
+  country   String?
+  phone     String?
+  size      String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contacts Contact[]
+  clients  Client[]
+
+  @@map("companies")
+}
+
+model Contact {
+  id              String   @id @default(uuid())
+  companyId       String
+  name            String
+  position        String?
+  email           String?
+  phone           String?
+  whatsapp        String?
+  preferredMethod String?  @default("EMAIL")
+  notes           String?
+  isPrimary       Boolean  @default(false)
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  clients  Client[] @relation("PrimaryContact")
+  meetings MeetingParticipant[]
+
+  @@map("contacts")
+}
+
+model Client {
+  id                 String    @id @default(uuid())
+  customClientId     String    @unique
+  companyId          String
+  primaryContactId   String?
+  relationshipStatus String    @default("LEAD") // LEAD, CONTACTED, MEETING_SCHEDULED, MEETING_COMPLETED, FOLLOWUP_REQUIRED, NEGOTIATION, ACTIVE_CLIENT, DORMANT, LOST
+  clientType         String    @default("Corporate")
+  priority           String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  leadSource         String?
+  assignedUserId     String?
+  notes              String?
+  lastContactDate    DateTime?
+  nextMeetingDate    DateTime?
+  nextFollowupDate   DateTime?
+  isArchived         Boolean   @default(false)
+  archivedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  primaryContact  Contact?         @relation("PrimaryContact", fields: [primaryContactId], references: [id], onDelete: SetNull)
+  assignedUser    User?            @relation("AssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  meetings        Meeting[]
+  followups       Followup[]
+  tasks           Task[]
+  opportunities   Opportunity[]
+  activities      Activity[]
+  aiConversations AIConversation[]
+
+  @@map("clients")
+}
+
+model Meeting {
+  id               String    @id @default(uuid())
+  clientId         String
+  title            String
+  meetingType      String    @default("ONLINE") // PHYSICAL, ONLINE, PHONE, VIDEO_CONFERENCE, INTERNAL, OTHER
+  status           String    @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, RESCHEDULED, NO_SHOW
+  startTime        DateTime
+  endTime          DateTime
+  timezone         String    @default("Asia/Karachi")
+  location         String?
+  meetingLink      String?
+  agenda           String?
+  notes            String?
+  outcome          String?   // POSITIVE, NEUTRAL, NEGATIVE, PROPOSAL_REQUESTED, FURTHER_DISCUSSION_REQUIRED, CLOSED
+  nextAction       String?
+  nextMeetingDate  DateTime?
+  nextFollowupDate DateTime?
+  assignedUserId   String?
+  createdById      String?
+  reminded24h      Boolean   @default(false)
+  reminded1h       Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  client        Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  assignedUser  User?                @relation("MeetingAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  createdByUser User?                @relation("MeetingCreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+  participants  MeetingParticipant[]
+  followups     Followup[]
+
+  @@map("meetings")
+}
+
+model MeetingParticipant {
+  id        String   @id @default(uuid())
+  meetingId String
+  contactId String?
+  userId    String?
+  name      String
+  email     String?
+  role      String?
+  createdAt DateTime @default(now())
+
+  meeting Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@map("meeting_participants")
+}
+
+model Followup {
+  id              String    @id @default(uuid())
+  clientId        String
+  meetingId       String?
+  title           String
+  description     String?
+  followupType    String    @default("GENERAL") // CALL, EMAIL, MEETING, PROPOSAL, DOCUMENT, GENERAL
+  priority        String    @default("MEDIUM")  // LOW, MEDIUM, HIGH, URGENT
+  status          String    @default("PENDING") // PENDING, COMPLETED, OVERDUE, CANCELLED
+  dueDate         DateTime
+  dueTime         String?
+  reminderDate    DateTime?
+  reminderChannel String    @default("ALL")
+  reminded        Boolean   @default(false)
+  assignedUserId  String?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  meeting      Meeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  assignedUser User?    @relation("FollowupAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  @@map("followups")
+}
+
+model Task {
+  id             String    @id @default(uuid())
+  clientId       String?
+  title          String
+  description    String?
+  dueDate        DateTime?
+  priority       String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status         String    @default("TODO")   // TODO, IN_PROGRESS, COMPLETED, OVERDUE
+  assignedUserId String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  client       Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  assignedUser User?   @relation("TaskAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  @@map("tasks")
+}
+
+model Opportunity {
+  id                String    @id @default(uuid())
+  clientId          String
+  title             String
+  stage             String    @default("LEAD") // LEAD, CONTACTED, MEETING, PROPOSAL, NEGOTIATION, WON, LOST
+  value             Float     @default(0)
+  currency          String    @default("USD")
+  probability       Int       @default(20)
+  expectedCloseDate DateTime?
+  assignedUserId    String?
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  client       Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  assignedUser User?  @relation("OpportunityAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  @@map("opportunities")
+}
+
+model Activity {
+  id           String   @id @default(uuid())
+  clientId     String?
+  userId       String?
+  type         String   // CLIENT_CREATED, CLIENT_UPDATED, STATUS_CHANGED, ASSIGNED_USER_CHANGED, MEETING_SCHEDULED, MEETING_COMPLETED, FOLLOWUP_CREATED, FOLLOWUP_COMPLETED, NOTE_ADDED, TASK_CREATED, OPPORTUNITY_STAGE_CHANGED, CLIENT_ARCHIVED, CLIENT_RESTORED, EMAIL_SENT, NOTIFICATION_SENT
+  title        String
+  description  String?
+  metadataJson String?
+  createdAt    DateTime @default(now())
+
+  client Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("activities")
+}
+
+model Notification {
+  id           String    @id @default(uuid())
+  userId       String
+  title        String
+  message      String
+  type         String    @default("SYSTEM") // MEETING_REMINDER, FOLLOWUP_REMINDER, TASK_REMINDER, OVERDUE_ALERT, SYSTEM
+  entityType   String?
+  entityId     String?
+  channelsJson String?
+  read         Boolean   @default(false)
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model NotificationLog {
+  id               String    @id @default(uuid())
+  userId           String?
+  recipientName    String?
+  recipientContact String
+  channel          String    // EMAIL, WHATSAPP, IN_APP, BROWSER
+  type             String    // MEETING_REMINDER, FOLLOWUP_REMINDER, TASK_REMINDER, OVERDUE_ALERT, TEST_EMAIL, TEST_WHATSAPP, SYSTEM
+  title            String
+  message          String
+  status           String    // SENT, FAILED, NOT_CONFIGURED
+  error            String?
+  metadataJson     String?
+  sentAt           DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("notification_logs")
+}
+
+model Setting {
+  key         String   @id
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  diffJson  String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+model AIConversation {
+  id        String      @id @default(uuid())
+  userId    String
+  clientId  String?
+  title     String      @default("New Conversation")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client   Client?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  messages AIMessage[]
+
+  @@map("ai_conversations")
+}
+
+model AIMessage {
+  id             String         @id @default(uuid())
+  conversationId String
+  role           String         // user, assistant, system, function
+  content        String
+  toolCallsJson  String?
+  createdAt      DateTime       @default(now())
+
+  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("ai_messages")
+}
