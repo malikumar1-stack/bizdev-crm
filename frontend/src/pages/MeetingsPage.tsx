@@ -101,7 +101,20 @@ export const MeetingsPage: React.FC<MeetingsPageProps> = ({ onOpenSchedule }) =>
               </p>
             )}
 
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const phone = (m.assignedUser?.whatsapp || m.assignedUser?.whatsappNumber || m.client?.primaryContact?.phone || '').replace(/\D/g, '');
+                  const formattedTime = format(new Date(m.startTime), 'dd MMM yyyy, hh:mm a');
+                  const msg = `*Reminder: Client Meeting Scheduled*\n\n*Client:* ${m.client?.company?.name || 'Client'}\n*Contact:* ${m.client?.primaryContact?.name || 'Key Stakeholder'}\n*Date & Time:* ${formattedTime}\n*Format:* ${m.meetingType}\n*Location:* ${m.location || m.meetingLink || 'Online Conference'}\n*Agenda:* ${m.agenda || 'Business Development Discussion'}\n\nPlease review notes before the meeting.`;
+                  window.open(`https://wa.me/${phone || ''}?text=${encodeURIComponent(msg)}`, '_blank');
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-100 transition-all"
+              >
+                <span>📱 WhatsApp Briefing</span>
+              </button>
+
               {m.status === 'SCHEDULED' && (
                 <Button size="sm" onClick={() => setCompletingMeeting(m)}>
                   Complete & Next Steps
