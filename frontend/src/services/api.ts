@@ -134,9 +134,19 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(task)
     }),
+  updateTask: (id: string, task: any) =>
+    request<ITask>(`/tasks/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(task)
+    }),
 
   // Opportunities / Pipeline
   getOpportunities: () => request<IOpportunity[]>('/opportunities'),
+  createOpportunity: (opp: any) =>
+    request<IOpportunity>('/opportunities', {
+      method: 'POST',
+      body: JSON.stringify(opp)
+    }),
   updateOpportunityStage: (id: string, stage: string) =>
     request<IOpportunity>(`/opportunities/${id}/stage`, {
       method: 'PATCH',

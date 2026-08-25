@@ -10,6 +10,9 @@ import { ClientDetailPage } from './pages/ClientDetailPage';
 import { MeetingsPage } from './pages/MeetingsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
+import { TasksPage } from './pages/TasksPage';
+import { ReportsPage } from './pages/ReportsPage';
+import { AIAssistantPage } from './pages/AIAssistantPage';
 import { CalendarView } from './components/calendar/CalendarView';
 import { KanbanBoard } from './components/pipeline/KanbanBoard';
 import { ClientFormModal } from './components/clients/ClientFormModal';
@@ -27,6 +30,12 @@ function MainApp() {
   const [showMeetingModal, setShowMeetingModal] = useState(false);
   const [showClientModal, setShowClientModal] = useState(false);
   const [showFollowupModal, setShowFollowupModal] = useState(false);
+  const [showOpportunityModal, setShowOpportunityModal] = useState(false);
+  const [newOppTitle, setNewOppTitle] = useState('');
+  const [newOppValue, setNewOppValue] = useState(10000);
+  const [newOppStage, setNewOppStage] = useState('LEAD');
+  const [newOppClientId, setNewOppClientId] = useState('');
+  const [oppLoading, setOppLoading] = useState(false);
   
   // Pipeline Data
   const [opportunities, setOpportunities] = useState<any[]>([]);
@@ -147,6 +156,29 @@ function MainApp() {
     }
   };
 
+  
+  const handleCreateOpportunity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOppLoading(true);
+    try {
+      await api.createOpportunity({
+        clientId: newOppClientId,
+        title: newOppTitle,
+        value: Number(newOppValue),
+        stage: newOppStage,
+        assignedUserId: user?.id
+      });
+      setShowOpportunityModal(false);
+      setNewOppTitle('');
+      loadData();
+      alert('✓ Opportunity created in pipeline!');
+    } catch (err: any) {
+      alert(err.message || 'Failed to create opportunity');
+    } finally {
+      setOppLoading(false);
+    }
+  };
+
   const handleCreateFollowup = async (e: React.FormEvent) => {
     e.preventDefault();
     setFollowupLoading(true);
@@ -179,6 +211,7 @@ function MainApp() {
         if (type === 'meeting') setShowMeetingModal(true);
         else if (type === 'client') setShowClientModal(true);
         else if (type === 'followup') setShowFollowupModal(true);
+        else if (type === 'opportunity') setShowOpportunityModal(true);
       }}
     >
       {currentPage === 'dashboard' && (
@@ -223,12 +256,24 @@ function MainApp() {
       )}
 
       {currentPage === 'pipeline' && (
-        <KanbanBoard
-          opportunities={opportunities}
-          onRefresh={loadData}
-          onOpenOpportunity={() => {}}
-          onNewOpportunity={() => {}}
-        />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Deal Pipeline</h2>
+              <p className="text-xs text-slate-500">Visual drag-and-drop opportunity progression and forecasting</p>
+            </div>
+            <Button size="sm" onClick={() => setShowOpportunityModal(true)}>+ New Opportunity</Button>
+          </div>
+          <KanbanBoard
+            opportunities={opportunities}
+            onRefresh={loadData}
+            onOpenOpportunity={(opp) => alert(`Opportunity: ${opp.title} (${opp.value.toLocaleString()})`)}
+            onNewOpportunity={(stage) => {
+              if (stage) setNewOppStage(stage);
+              setShowOpportunityModal(true);
+            }}
+          />
+        </div>
       )}
 
       {currentPage === 'followups' && (
@@ -260,6 +305,19 @@ function MainApp() {
       {currentPage === 'settings' && (
         <SettingsPage />
       )}
+
+      {currentPage === 'tasks' && (
+        <TasksPage />
+      )}
+
+      {currentPage === 'reports' && (
+        <ReportsPage />
+      )}
+
+      {currentPage === 'ai' && (
+        <AIAssistantPage />
+      )}
+
 
       {/* Schedule Meeting Modal */}
       <Modal

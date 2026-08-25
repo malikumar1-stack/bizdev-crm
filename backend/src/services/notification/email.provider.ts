@@ -51,12 +51,27 @@ export class EmailProvider implements INotificationProvider {
     }
 
     try {
-      const transporter = nodemailer.createTransport({
+      let transportOptions: any = {
         host,
         port,
         secure: port === 465,
-        auth: { user, pass }
-      });
+        auth: { user, pass },
+        connectionTimeout: 12000,
+        greetingTimeout: 12000,
+        socketTimeout: 15000
+      };
+
+      if (host.includes('gmail.com') || (user && user.includes('@gmail.com'))) {
+        transportOptions = {
+          service: 'gmail',
+          auth: { user, pass },
+          connectionTimeout: 12000,
+          greetingTimeout: 12000,
+          socketTimeout: 15000
+        };
+      }
+
+      const transporter = nodemailer.createTransport(transportOptions);
 
       const info = await transporter.sendMail({
         from: `"${senderName}" <${sender}>`,

@@ -89,15 +89,28 @@ export class SettingController {
         return sendError(res, 'Email failed: SMTP credentials are not configured. Please fill in SMTP Host, Username, and Password.', 400);
       }
 
-      const transporter = nodemailer.createTransport({
+      let transportOptions: any = {
         host: finalHost,
         port: finalPort,
         secure: finalPort === 465,
         auth: { user: finalUser, pass: finalPass },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
+        connectionTimeout: 12000,
+        greetingTimeout: 12000,
         socketTimeout: 15000
-      });
+      };
+
+      // Gmail SSL/Service bypass for cloud hosts (like Render) that block port 587
+      if (finalHost.includes('gmail.com') || (finalUser && finalUser.includes('@gmail.com'))) {
+        transportOptions = {
+          service: 'gmail',
+          auth: { user: finalUser, pass: finalPass },
+          connectionTimeout: 12000,
+          greetingTimeout: 12000,
+          socketTimeout: 15000
+        };
+      }
+
+      const transporter = nodemailer.createTransport(transportOptions);
 
       const info = await transporter.sendMail({
         from: `"${finalSenderName}" <${finalSender}>`,
