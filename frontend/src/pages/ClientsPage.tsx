@@ -3,6 +3,8 @@ import { IClient, IUser } from '../types';
 import { api } from '../services/api';
 import { Button } from '../components/common/Button';
 import { ClientFormModal } from '../components/clients/ClientFormModal';
+import { ImportModal } from '../components/clients/ImportModal';
+import { Download, Upload } from 'lucide-react';
 
 interface ClientsPageProps {
   onSelectClient: (clientId: string) => void;
@@ -22,6 +24,7 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
 
   // Edit / Add modal
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<IClient | null>(null);
   const [usersList, setUsersList] = useState<IUser[]>([]);
 
@@ -73,6 +76,11 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
     }
   };
 
+  
+  const handleExport = (format: 'csv' | 'xlsx') => {
+    window.open(`${api.baseUrl || ''}/api/import-export/export?format=${format}`, '_blank');
+  };
+
   const handleOpenEdit = (client: IClient, e: React.MouseEvent) => {
     e.stopPropagation();
     setClientToEdit(client);
@@ -87,14 +95,23 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">Client Portfolio</h2>
           <p className="text-xs text-slate-500">Enterprise accounts, stakeholder contacts, and relationship health</p>
         </div>
-        <Button
-          onClick={() => {
-            setClientToEdit(null);
-            setIsFormModalOpen(true);
-          }}
-        >
-          + Add Client
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(true)} icon={<Upload className="w-4 h-4" />}>
+            Import
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleExport('csv')} icon={<Download className="w-4 h-4" />}>
+            Export CSV
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              setClientToEdit(null);
+              setIsFormModalOpen(true);
+            }}
+          >
+            + Add Client
+          </Button>
+        </div>
       </div>
 
       {/* Tabs & Filters */}

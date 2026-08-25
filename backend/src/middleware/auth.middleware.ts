@@ -9,6 +9,7 @@ export interface AuthUser {
   email: string;
   name: string;
   role: string;
+  tokenVersion?: number;
   phone?: string | null;
   whatsapp?: string | null;
   whatsappNumber?: string | null;
@@ -22,6 +23,30 @@ export interface AuthRequest extends Request {
   user?: AuthUser;
 }
 
+// In-memory IP rate limiter for authentication endpoints
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+export function loginRateLimiter(req: Request, res: Response, next: NextFunction) {
+  const ip = (req.headers['x-forwarded-for'] as string) || req.ip || req.socket.remoteAddress || 'unknown-ip';
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+
+  if (record) {
+    if (now > record.resetAt) {
+      loginAttempts.set(ip, { count: 1, resetAt: now + 60000 });
+    } else {
+      if (record.count >= 10) {
+        return sendError(res, 'Too many login attempts from this IP. Please wait 1 minute before trying again.', 429);
+      }
+      record.count += 1;
+    }
+  } else {
+    loginAttempts.set(ip, { count: 1, resetAt: now + 60000 });
+  }
+
+  next();
+}
+
 export async function authenticateToken(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
@@ -31,7 +56,7 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
   }
 
   try {
-    const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;
+    const decoded = jwt.verify(token, config.jwtSecret) as any;
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: {
@@ -39,6 +64,7 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
         email: true,
         name: true,
         role: true,
+        tokenVersion: true,
         active: true,
         status: true,
         phone: true,
@@ -53,10 +79,15 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
       return sendError(res, 'User account is inactive or not found', 403);
     }
 
+    // Token Version Invalidation Check
+    if (decoded.tokenVersion !== undefined && user.tokenVersion !== undefined && decoded.tokenVersion !== user.tokenVersion) {
+      return sendError(res, 'Session invalidated due to security or password update. Please sign in again.', 401);
+    }
+
     req.user = user;
     next();
   } catch (err) {
-    return sendError(res, 'Invalid or expired token', 401);
+    return sendError(res, 'Invalid or expired authentication token', 401);
   }
 }
 

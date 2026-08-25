@@ -64,7 +64,7 @@ export class AuthController {
       });
 
       const token = jwt.sign(
-        { id: user.id, email: user.email, name: user.name, role: user.role },
+        { id: user.id, email: user.email, name: user.name, role: user.role, tokenVersion: user.tokenVersion || 1 },
         config.jwtSecret,
         { expiresIn: '7d' }
       );

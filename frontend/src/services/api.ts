@@ -27,6 +27,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 }
 
 export const api = {
+  baseUrl: API_BASE,
   // Notifications In-App
   getNotifications: () => request<{ notifications: any[]; unreadCount: number }>('/notifications'),
   markNotificationRead: (id: string) => request<any>(`/notifications/${id}/read`, { method: 'PATCH' }),
@@ -216,5 +217,28 @@ export const api = {
     request<any>('/ai/summarize-notes', {
       method: 'POST',
       body: JSON.stringify({ notes, clientName })
+    }),
+
+  // Import / Export
+  parseImportFile: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE}/import-export/upload`, {
+      method: 'POST',
+      headers,
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'File parsing failed');
+    return data.data || data;
+  },
+  processImport: (payload: { rows: any[]; mapping: Record<string, string> }) =>
+    request<any>('/import-export/process', {
+      method: 'POST',
+      body: JSON.stringify(payload)
     })
 };

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth.middleware';
+import { authenticateToken, loginRateLimiter } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/rbac.middleware';
 
 import { AuthController } from '../controllers/auth.controller';
@@ -21,7 +21,7 @@ import { ImportExportController } from '../controllers/import-export.controller'
 const router = Router();
 
 // Auth Routes (Public)
-router.post('/auth/login', AuthController.login);
+router.post('/auth/login', loginRateLimiter, AuthController.login);
 router.post('/auth/register', AuthController.register);
 
 // Protected Routes

@@ -215,7 +215,8 @@ export class UserController {
         where: { id },
         data: {
           passwordHash,
-          forcePasswordChange: true
+          forcePasswordChange: true,
+          tokenVersion: { increment: 1 }
         }
       });
 

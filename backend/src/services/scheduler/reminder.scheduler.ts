@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { addHours, subMinutes, addMinutes, isBefore, isAfter } from 'date-fns';
+import { addHours, isBefore, addMinutes } from 'date-fns';
 import { prisma } from '../../utils/prisma';
 import { notificationService } from '../notification/notification.service';
 import { formatTimeInTz } from '../../config/timezone';
@@ -9,8 +9,14 @@ export class ReminderScheduler {
   private isRunning: boolean = false;
 
   start() {
-    logger.info('Starting Background Reminder Scheduler (Runs every minute)...');
-    // Run every minute
+    logger.info('Starting Background Reminder Scheduler (Runs every minute with boot recovery)...');
+
+    // 1. Immediate boot catch-up scan for missed reminders during container sleep/restart
+    this.checkAndSendReminders().catch((err) => {
+      logger.error('Startup reminder recovery scan failed:', err);
+    });
+
+    // 2. Schedule regular recurring scan every minute
     cron.schedule('* * * * *', async () => {
       await this.checkAndSendReminders();
     });
@@ -22,11 +28,11 @@ export class ReminderScheduler {
 
     try {
       const now = new Date();
-      const in24Hours = addHours(now, 36); // Covers upcoming meetings within the next 24-36h (including all of tomorrow)
-      const in1Hour = addHours(now, 2);    // Covers upcoming meetings in next 1-2h
+      const in36Hours = addHours(now, 36);
+      const in90Minutes = addMinutes(now, 90);
 
       // ========================================================================
-      // 1. Check 24-Hour Meeting Reminders (Meetings in next 24h not yet reminded)
+      // 1. Check 24-Hour Meeting Reminders
       // ========================================================================
       const meetings24h = await prisma.meeting.findMany({
         where: {
@@ -34,7 +40,7 @@ export class ReminderScheduler {
           reminded24h: false,
           startTime: {
             gte: now,
-            lte: in24Hours
+            lte: in36Hours
           }
         },
         include: {
@@ -46,6 +52,19 @@ export class ReminderScheduler {
       });
 
       for (const meeting of meetings24h) {
+        const timeUntilMeetingMs = new Date(meeting.startTime).getTime() - now.getTime();
+        const hoursUntilMeeting = timeUntilMeetingMs / (1000 * 60 * 60);
+
+        // If meeting is already starting in less than 2 hours, mark 24h reminder as skipped/true
+        // and let the 1h reminder deliver the urgent notification without duplicate spam
+        if (hoursUntilMeeting <= 2) {
+          await prisma.meeting.update({
+            where: { id: meeting.id },
+            data: { reminded24h: true }
+          });
+          continue;
+        }
+
         if (meeting.assignedUserId) {
           const formattedDate = formatTimeInTz(meeting.startTime, 'dd MMMM yyyy');
           const formattedTime = formatTimeInTz(meeting.startTime, 'hh:mm a');
@@ -94,7 +113,7 @@ export class ReminderScheduler {
           reminded1h: false,
           startTime: {
             gte: now,
-            lte: in1Hour
+            lte: in90Minutes
           }
         },
         include: {
@@ -113,7 +132,7 @@ export class ReminderScheduler {
 
           await notificationService.send({
             userId: meeting.assignedUserId,
-            title: `Starting in 1 Hour: ${companyName} Meeting`,
+            title: `Starting Soon: ${companyName} Meeting`,
             message: `Your meeting "${meeting.title}" with ${companyName} (${contactName}) starts at ${formattedTime}.\nLocation/Link: ${meeting.location || meeting.meetingLink || 'Online'}`,
             type: 'MEETING_REMINDER',
             entityType: 'MEETING',
@@ -129,22 +148,29 @@ export class ReminderScheduler {
       }
 
       // ========================================================================
-      // 3. Check Due/Overdue Follow-ups
+      // 3. Scan & Update Overdue Follow-ups
       // ========================================================================
-      const followups = await prisma.followup.findMany({
+      await prisma.followup.updateMany({
         where: {
           status: 'PENDING',
+          dueDate: { lt: now }
+        },
+        data: { status: 'OVERDUE' }
+      });
+
+      // Send pending reminders for follow-ups due today
+      const pendingFollowups = await prisma.followup.findMany({
+        where: {
+          status: { in: ['PENDING', 'OVERDUE'] },
           reminded: false,
-          dueDate: {
-            lte: now
-          }
+          dueDate: { lte: now }
         },
         include: {
           client: { include: { company: true } }
         }
       });
 
-      for (const fu of followups) {
+      for (const fu of pendingFollowups) {
         if (fu.assignedUserId) {
           await notificationService.send({
             userId: fu.assignedUserId,
@@ -157,7 +183,7 @@ export class ReminderScheduler {
 
           await prisma.followup.update({
             where: { id: fu.id },
-            data: { reminded: true, status: isBefore(fu.dueDate, now) ? 'OVERDUE' : 'PENDING' }
+            data: { reminded: true }
           });
         }
       }

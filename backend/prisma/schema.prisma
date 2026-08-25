@@ -17,6 +17,7 @@ model User {
   passwordHash         String
   name                 String
   role                 String    @default("BD_EXECUTIVE") // ADMIN, MANAGER, BD_EXECUTIVE, VIEWER
+  tokenVersion         Int       @default(1)
   notificationEmail    String?
   countryCode          String?   @default("+92")
   phone                String?
@@ -43,6 +44,8 @@ model User {
   auditLogs             AuditLog[]
   aiConversations       AIConversation[]
 
+  @@index([role])
+  @@index([status])
   @@map("users")
 }
 
@@ -83,6 +86,7 @@ model Company {
   contacts Contact[]
   clients  Client[]
 
+  @@index([name])
   @@map("companies")
 }
 
@@ -105,6 +109,8 @@ model Contact {
   clients  Client[] @relation("PrimaryContact")
   meetings MeetingParticipant[]
 
+  @@index([companyId])
+  @@index([email])
   @@map("contacts")
 }
 
@@ -137,6 +143,10 @@ model Client {
   activities      Activity[]
   aiConversations AIConversation[]
 
+  @@index([companyId])
+  @@index([assignedUserId, isArchived])
+  @@index([relationshipStatus])
+  @@index([isArchived])
   @@map("clients")
 }
 
@@ -170,6 +180,10 @@ model Meeting {
   participants  MeetingParticipant[]
   followups     Followup[]
 
+  @@index([clientId, status])
+  @@index([assignedUserId, startTime])
+  @@index([reminded24h, reminded1h, startTime])
+  @@index([status, startTime])
   @@map("meetings")
 }
 
@@ -186,6 +200,7 @@ model MeetingParticipant {
   meeting Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
   contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
+  @@index([meetingId])
   @@map("meeting_participants")
 }
 
@@ -212,6 +227,9 @@ model Followup {
   meeting      Meeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
   assignedUser User?    @relation("FollowupAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
 
+  @@index([clientId, status])
+  @@index([assignedUserId, dueDate])
+  @@index([status, dueDate])
   @@map("followups")
 }
 
@@ -230,6 +248,8 @@ model Task {
   client       Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
   assignedUser User?   @relation("TaskAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
 
+  @@index([clientId, status])
+  @@index([assignedUserId, dueDate])
   @@map("tasks")
 }
 
@@ -250,6 +270,8 @@ model Opportunity {
   client       Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   assignedUser User?  @relation("OpportunityAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
 
+  @@index([clientId, stage])
+  @@index([assignedUserId, stage])
   @@map("opportunities")
 }
 
@@ -266,6 +288,8 @@ model Activity {
   client Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@index([clientId, createdAt])
+  @@index([userId, createdAt])
   @@map("activities")
 }
 
@@ -284,6 +308,8 @@ model Notification {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, read])
+  @@index([userId, createdAt])
   @@map("notifications")
 }
 
@@ -303,6 +329,9 @@ model NotificationLog {
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@index([userId, sentAt])
+  @@index([status])
+  @@index([channel])
   @@map("notification_logs")
 }
 
@@ -327,6 +356,8 @@ model AuditLog {
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
   @@map("audit_logs")
 }
 
