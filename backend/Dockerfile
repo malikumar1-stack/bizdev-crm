@@ -1,6 +1,8 @@
 # Multi-stage Build for BizDev CRM Backend API & Scheduler
 FROM node:20-alpine AS builder
 
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -15,6 +17,8 @@ RUN npx prisma generate
 RUN npm run build
 
 FROM node:20-alpine AS runner
+
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
@@ -31,4 +35,4 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "npx prisma db push && node dist/index.js"]
+CMD ["node", "dist/index.js"]
