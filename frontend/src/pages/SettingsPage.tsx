@@ -134,8 +134,18 @@ export const SettingsPage: React.FC = () => {
     setEmailTestLoading(true);
     setEmailStatusMessage('');
     try {
-      const res = await api.sendTestEmail();
-      setEmailStatusMessage('✓ Verified test email sent successfully to your account.');
+      // Auto-save form inputs first so test always uses latest values
+      await api.updateSettings({
+        smtp_host: smtpHost,
+        smtp_port: smtpPort,
+        smtp_user: smtpUser,
+        smtp_password: smtpPass,
+        smtp_sender_name: smtpSenderName,
+        smtp_sender_email: smtpSenderEmail
+      });
+
+      const res = await api.sendTestEmail(smtpSenderEmail || smtpUser);
+      setEmailStatusMessage('✓ Verified test email sent successfully! Please check your inbox.');
     } catch (err: any) {
       setEmailStatusMessage(`✕ Email failed: ${err.message}`);
     } finally {

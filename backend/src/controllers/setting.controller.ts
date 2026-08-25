@@ -93,7 +93,10 @@ export class SettingController {
         host: finalHost,
         port: finalPort,
         secure: finalPort === 465,
-        auth: { user: finalUser, pass: finalPass }
+        auth: { user: finalUser, pass: finalPass },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000
       });
 
       const info = await transporter.sendMail({
