@@ -5,8 +5,8 @@ import { Building2, Shield, Lock, Mail, ArrowRight, CheckCircle2 } from 'lucide-
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
-  const [email, setEmail] = useState('admin@bizdevcrm.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,11 +21,6 @@ export const LoginPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickDemoLogin = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('password123');
   };
 
   return (
@@ -90,44 +85,11 @@ export const LoginPage: React.FC = () => {
           </Button>
         </form>
 
-        {/* 1-Click Demo Accounts */}
-        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
-          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center mb-3">
-            Quick Demo Accounts (Click to Fill)
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('admin@bizdevcrm.com')}
-              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:border-brand-500 text-left transition-all group"
-            >
-              <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-brand-600">Admin</p>
-              <p className="text-[10px] text-slate-400">admin@bizdevcrm.com</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('sarah.manager@bizdevcrm.com')}
-              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:border-brand-500 text-left transition-all group"
-            >
-              <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-brand-600">Manager</p>
-              <p className="text-[10px] text-slate-400">sarah.manager@bizdevcrm.com</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('ali.exec@bizdevcrm.com')}
-              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:border-brand-500 text-left transition-all group"
-            >
-              <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-brand-600">BD Executive</p>
-              <p className="text-[10px] text-slate-400">ali.exec@bizdevcrm.com</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('viewer@bizdevcrm.com')}
-              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:border-brand-500 text-left transition-all group"
-            >
-              <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-brand-600">Viewer</p>
-              <p className="text-[10px] text-slate-400">viewer@bizdevcrm.com</p>
-            </button>
+        {/* Security Footer */}
+        <div className="mt-8 pt-5 border-t border-slate-100 dark:border-slate-800 text-center">
+          <div className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+            <Shield className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Enterprise 256-bit Encrypted Portal</span>
           </div>
         </div>
       </div>
