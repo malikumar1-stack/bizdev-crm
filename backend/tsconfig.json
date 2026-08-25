@@ -14,7 +14,6 @@
   "include": [
     "src/**/*",
     "prisma/**/*",
-    "tests/**/*",
-    "../shared/**/*"
+    "tests/**/*"
   ]
 }

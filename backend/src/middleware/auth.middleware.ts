@@ -9,6 +9,11 @@ export interface AuthUser {
   email: string;
   name: string;
   role: string;
+  phone?: string | null;
+  whatsapp?: string | null;
+  whatsappNumber?: string | null;
+  countryCode?: string | null;
+  notificationEmail?: string | null;
   status?: string;
   active?: boolean;
 }
@@ -29,7 +34,19 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
     const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, email: true, name: true, role: true, active: true, status: true }
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        active: true,
+        status: true,
+        phone: true,
+        whatsapp: true,
+        whatsappNumber: true,
+        countryCode: true,
+        notificationEmail: true
+      }
     });
 
     if (!user || user.status === 'INACTIVE' || !user.active) {

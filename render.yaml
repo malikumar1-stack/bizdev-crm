@@ -1,4 +1,5 @@
 services:
+  # 1. Backend Web Service (Free Tier - 0 Card Required)
   - type: web
     name: bizdev-crm-backend
     env: node
@@ -12,14 +13,13 @@ services:
       - key: PORT
         value: 5000
       - key: DATABASE_URL
-        fromDatabase:
-          name: bizdev-crm-db
-          property: connectionString
+        value: postgresql://neondb_owner:npg_5ImnqwasPob6@ep-cool-darkness-ax6wd8g6.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require
       - key: JWT_SECRET
         generateValue: true
       - key: APP_TIMEZONE
         value: Asia/Karachi
 
+  # 2. Frontend Web Application (Free Tier - 0 Card Required)
   - type: web
     name: bizdev-crm-frontend
     env: static
@@ -33,9 +33,3 @@ services:
           type: web
           name: bizdev-crm-backend
           property: host
-
-databases:
-  - name: bizdev-crm-db
-    plan: free
-    databaseName: bizdevcrm
-    user: crm_admin

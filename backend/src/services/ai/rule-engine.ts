@@ -1,4 +1,4 @@
-import { IClient, IMeeting, IFollowup } from '../../../../shared/types';
+import { IClient, IMeeting, IFollowup } from '../../types';
 
 export class RuleEngine {
   /**

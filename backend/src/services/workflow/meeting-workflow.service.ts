@@ -1,5 +1,5 @@
 import { prisma } from '../../utils/prisma';
-import { IPostMeetingWorkflowPayload } from '../../../../shared/types';
+import { IPostMeetingWorkflowPayload } from '../../types';
 import { notificationService } from '../notification/notification.service';
 import { logger } from '../../utils/logger';
 
