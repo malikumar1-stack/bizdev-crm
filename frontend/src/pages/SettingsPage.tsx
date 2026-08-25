@@ -41,8 +41,7 @@ export const SettingsPage: React.FC = () => {
   const [whatsappTestLoading, setWhatsappTestLoading] = useState(false);
   const [whatsappStatusMessage, setWhatsappStatusMessage] = useState('');
   const [whatsappClickUrl, setWhatsappClickUrl] = useState<string | null>(null);
-  const [testWhatsappPhone, setTestWhatsappPhone] = useState('+923001234567');
-
+  
   // Notification Logs
   const [notifLogs, setNotifLogs] = useState<INotificationLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -506,46 +505,10 @@ export const SettingsPage: React.FC = () => {
 
       {/* Tab 3: WhatsApp API Config */}
       {activeTab === 'WHATSAPP' && isAdmin && (
-        <div className="space-y-6 max-w-2xl">
-          {/* Card 1: 1-Click Instant WhatsApp Testing (No Setup Required) */}
-          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 p-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xl">📱</span>
-              <h3 className="text-sm font-bold text-emerald-950 dark:text-emerald-200">
-                Instant 1-Click WhatsApp Reminders (Zero Setup Required)
-              </h3>
-            </div>
-            <p className="text-xs text-emerald-800 dark:text-emerald-300/90 mb-4 leading-relaxed">
-              You do <strong>not</strong> need any Meta developer account or API keys. Simply enter your mobile phone number below to test a live meeting briefing on your WhatsApp right now:
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <input
-                type="text"
-                placeholder="e.g. +923001234567 or 03001234567"
-                value={testWhatsappPhone}
-                onChange={(e) => setTestWhatsappPhone(e.target.value)}
-                className="flex-1 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 p-2.5 text-xs font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const cleaned = (testWhatsappPhone || '+923001234567').replace(/\D/g, '');
-                  const sampleMsg = `*Reminder: Client Meeting Tomorrow — Apex Capital*\n\n*Contact:* Tariq Mehmood (Managing Director)\n*Date & Time:* Tomorrow at 11:00 AM\n*Format:* Physical Meeting\n*Location:* Head Office\n*Agenda:* Partnership Term Sheet Review\n\nPlease review client profile notes before the meeting.`;
-                  window.open(`https://wa.me/${cleaned}?text=${encodeURIComponent(sampleMsg)}`, '_blank');
-                }}
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2"
-              >
-                <span>🟢 Open Test in WhatsApp</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Card 2: Advanced Meta WhatsApp Cloud API (Optional) */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-              Advanced: Meta WhatsApp Cloud API (Optional Background Automation)
-            </h3>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm max-w-2xl">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+            Meta WhatsApp Cloud API Integration
+          </h3>
           <p className="text-xs text-slate-500 mb-4">
             Connect Meta WhatsApp Cloud API credentials. If unconfigured, the CRM generates standard click-to-chat (wa.me) links without false claims.
           </p>
@@ -626,7 +589,6 @@ export const SettingsPage: React.FC = () => {
             </div>
           </form>
         </div>
-      </div>
       )}
 
       {/* Tab 4: Notification Logs */}
