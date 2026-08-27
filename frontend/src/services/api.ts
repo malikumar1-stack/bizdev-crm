@@ -221,7 +221,7 @@ export const api = {
   chatAI: (prompt: string, clientId?: string) =>
     request<{ reply: string }>('/ai/chat', {
       method: 'POST',
-      body: JSON.stringify({ prompt, clientId })
+      body: JSON.stringify({ message: prompt, prompt, clientId })
     }),
   summarizeNotes: (notes: string, clientName?: string) =>
     request<any>('/ai/summarize-notes', {

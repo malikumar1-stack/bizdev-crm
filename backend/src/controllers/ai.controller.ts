@@ -7,10 +7,13 @@ import { prisma } from '../utils/prisma';
 export class AIController {
   static async chat(req: AuthRequest, res: Response) {
     try {
-      const { message, clientId } = req.body;
-      if (!message) return sendError(res, 'Message is required', 400);
+      const { message, prompt, query, clientId } = req.body;
+      const userText = message || prompt || query;
+      if (!userText || !userText.trim()) {
+        return sendError(res, 'Message or prompt text is required', 400);
+      }
 
-      const result = await aiService.processUserChat(req.user!.id, message, clientId);
+      const result = await aiService.processUserChat(req.user!.id, userText.trim(), clientId);
       return sendSuccess(res, result);
     } catch (err: any) {
       return sendError(res, err.message);
