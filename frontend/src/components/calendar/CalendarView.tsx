@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { IMeeting, IFollowup, ITask } from '../../types';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, CheckSquare } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, CheckSquare, Download } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
 import { Badge } from '../common/Badge';
+import { getGoogleCalendarUrl, downloadIcsFile } from '../../utils/calendar';
 import { clsx } from 'clsx';
 
 interface CalendarViewProps {
@@ -55,46 +56,63 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
         </div>
 
+        {/* View Mode Switcher */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-4 text-xs font-medium text-slate-500 mr-4">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-brand-500" /> Meetings</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Follow-ups</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> Tasks</span>
-          </div>
           <button
-            onClick={() => setViewMode(viewMode === 'month' ? 'agenda' : 'month')}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200"
+            onClick={() => setViewMode('month')}
+            className={clsx(
+              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+              viewMode === 'month'
+                ? "bg-brand-500 text-white shadow-xs"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+            )}
           >
-            {viewMode === 'month' ? 'Agenda View' : 'Month Grid'}
+            Month
+          </button>
+          <button
+            onClick={() => setViewMode('agenda')}
+            className={clsx(
+              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+              viewMode === 'agenda'
+                ? "bg-brand-500 text-white shadow-xs"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+            )}
+          >
+            Agenda
           </button>
         </div>
       </div>
 
-      {/* Month View Grid */}
       {viewMode === 'month' ? (
         <div className="p-4">
-          <div className="grid grid-cols-7 gap-px mb-2 text-center text-xs font-semibold text-slate-400 uppercase">
-            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-          </div>
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-px bg-slate-200 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 text-xs">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+              <div key={d} className="bg-slate-50 dark:bg-slate-900 p-2 font-bold text-center text-slate-500">
+                {d}
+              </div>
+            ))}
+
             {daysInMonth.map((day) => {
               const dayMeetings = meetings.filter((m) => isSameDay(new Date(m.startTime), day));
               const dayFollowups = followups.filter((f) => isSameDay(new Date(f.dueDate), day));
-              const dayTasks = tasks.filter((t) => t.dueDate && isSameDay(new Date(t.dueDate), day));
-              const isCurrent = isToday(day);
 
               return (
                 <div
                   key={day.toISOString()}
                   className={clsx(
-                    'min-h-[110px] p-2 rounded-xl border flex flex-col justify-between transition-colors',
-                    isCurrent
-                      ? 'border-brand-500/60 bg-brand-50/20 dark:bg-brand-950/20'
-                      : 'border-slate-100 dark:border-slate-800/80 hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
+                    "min-h-[110px] p-2 bg-white dark:bg-slate-900 flex flex-col justify-between transition-colors",
+                    isToday(day) && "bg-brand-50/40 dark:bg-brand-950/20"
                   )}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className={clsx('text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center', isCurrent ? 'bg-brand-600 text-white' : 'text-slate-700 dark:text-slate-300')}>
+                  <div className="flex justify-between items-center">
+                    <span
+                      className={clsx(
+                        "w-5 h-5 flex items-center justify-center rounded-full text-[11px] font-bold",
+                        isToday(day)
+                          ? "bg-brand-500 text-white"
+                          : "text-slate-700 dark:text-slate-300"
+                      )}
+                    >
                       {format(day, 'd')}
                     </span>
                   </div>
@@ -125,13 +143,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
         </div>
       ) : (
-        /* Agenda View */
+        /* Agenda View with 1-Click Calendar Sync */
         <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[600px] overflow-y-auto">
           {meetings.map((m) => (
             <div
               key={m.id}
               onClick={() => onSelectEvent('meeting', m.id)}
-              className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer flex items-center justify-between"
+              className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs">
@@ -142,7 +160,27 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   <p className="text-xs text-slate-500">{m.client?.company?.name} &bull; {format(new Date(m.startTime), 'hh:mm a')}</p>
                 </div>
               </div>
-              <Badge variant="info">{m.meetingType}</Badge>
+              <div className="flex items-center gap-2">
+                <a
+                  href={getGoogleCalendarUrl(m)}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 hover:bg-brand-100 border border-brand-200 dark:border-brand-900 flex items-center gap-1"
+                  title="Add to Google Calendar with automatic alerts"
+                >
+                  📅 Google Cal
+                </a>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); downloadIcsFile(m); }}
+                  className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 flex items-center gap-1"
+                  title="Download .ics for iPhone & Android Calendar"
+                >
+                  <Download className="w-3 h-3" /> Phone .ics
+                </button>
+                <Badge variant="info">{m.meetingType}</Badge>
+              </div>
             </div>
           ))}
         </div>
