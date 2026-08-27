@@ -50,11 +50,12 @@ export class SettingController {
 
   static async testEmail(req: AuthRequest, res: Response) {
     try {
-      const { recipientEmail, host, port, user, password, senderEmail, senderName } = req.body;
+      const { recipientEmail, host, port, user, password, senderEmail, senderName, resendApiKey } = req.body;
       const targetEmail = recipientEmail || req.user!.email;
 
-      // Get settings from DB if not provided in test payload
-      const [dbHost, dbPort, dbUser, dbPass, dbSenderEmail, dbSenderName] = await Promise.all([
+      // Check DB settings
+      const [dbResendKey, dbHost, dbPort, dbUser, dbPass, dbSenderEmail, dbSenderName] = await Promise.all([
+        prisma.setting.findUnique({ where: { key: 'resend_api_key' } }),
         prisma.setting.findUnique({ where: { key: 'smtp_host' } }),
         prisma.setting.findUnique({ where: { key: 'smtp_port' } }),
         prisma.setting.findUnique({ where: { key: 'smtp_user' } }),
@@ -63,15 +64,53 @@ export class SettingController {
         prisma.setting.findUnique({ where: { key: 'smtp_sender_name' } })
       ]);
 
+      const finalResendKey = resendApiKey && resendApiKey !== '••••••••' ? resendApiKey : (dbResendKey?.value || process.env.RESEND_API_KEY);
       const finalHost = host || dbHost?.value || process.env.SMTP_HOST;
       const finalPort = parseInt(port || dbPort?.value || process.env.SMTP_PORT || '587', 10);
       const finalUser = user || dbUser?.value || process.env.SMTP_USER;
       const finalPass = password && password !== '••••••••' ? password : (dbPass?.value || process.env.SMTP_PASS);
-      const finalSender = senderEmail || dbSenderEmail?.value || process.env.SMTP_FROM || 'crm@bizdevcrm.com';
+      const finalSender = senderEmail || dbSenderEmail?.value || process.env.SMTP_FROM || 'onboarding@resend.dev';
       const finalSenderName = senderName || dbSenderName?.value || 'BizDev CRM';
 
-      if (!finalHost || !finalUser || !finalPass) {
-        // Record test log
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+          <div style="background: #0c8ee9; padding: 20px; color: white;">
+            <h2 style="margin: 0; font-size: 18px;">✓ BizDev CRM Email Verification Successful</h2>
+            <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Automated Notification Diagnostic</p>
+          </div>
+          <div style="padding: 20px; color: #1e293b;">
+            <p style="font-size: 15px;">Hello ${req.user!.name},</p>
+            <p style="font-size: 14px; line-height: 1.6;">Your CRM notification transport is active and delivering emails! Meeting reminders (24h & 1h milestones) will automatically reach your team members.</p>
+            <div style="margin-top: 20px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 12px; color: #64748b;">
+              <strong>Transport:</strong> ${finalResendKey ? 'Resend HTTPS Cloud API (Port 443)' : `SMTP (${finalHost})`} &bull; <strong>Recipient:</strong> ${targetEmail}
+            </div>
+          </div>
+        </div>
+      `;
+
+      // 1. If Resend HTTPS API Key is present, test via Resend API (100% reliable on Render)
+      if (finalResendKey) {
+        const fromEmail = finalSender.includes('@') ? finalSender : 'onboarding@resend.dev';
+        const resendRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${finalResendKey}`
+          },
+          body: JSON.stringify({
+            from: `${finalSenderName} <${fromEmail}>`,
+            to: [targetEmail],
+            subject: '✓ BizDev CRM Test Email Verification',
+            html: emailHtml,
+            text: 'This is a verified test email from your BizDev CRM system. Automated email dispatch is configured correctly.'
+          })
+        });
+
+        const resData: any = await resendRes.json();
+        if (!resendRes.ok) {
+          throw new Error(resData.message || resData.error?.message || 'Resend API delivery failed');
+        }
+
         await prisma.notificationLog.create({
           data: {
             userId: req.user!.id,
@@ -80,13 +119,18 @@ export class SettingController {
             channel: 'EMAIL',
             type: 'TEST_EMAIL',
             title: 'Test Email Diagnostic',
-            message: 'Attempted to send test email',
-            status: 'FAILED',
-            error: 'SMTP credentials are not configured in system settings or environment variables.'
+            message: 'Test email successfully dispatched via Resend HTTPS API',
+            status: 'SENT',
+            metadataJson: JSON.stringify(resData)
           }
         });
 
-        return sendError(res, 'Email failed: SMTP credentials are not configured. Please fill in SMTP Host, Username, and Password.', 400);
+        return sendSuccess(res, { messageId: resData.id, mode: 'RESEND_HTTPS' }, 'Verified test email sent successfully via Resend HTTPS API!');
+      }
+
+      // 2. Otherwise test via SMTP
+      if (!finalHost || !finalUser || !finalPass) {
+        return sendError(res, 'Please provide either a Resend API Key OR SMTP credentials (Host, Username, Password).', 400);
       }
 
       let transportOptions: any = {
@@ -94,44 +138,28 @@ export class SettingController {
         port: finalPort,
         secure: finalPort === 465,
         auth: { user: finalUser, pass: finalPass },
-        connectionTimeout: 12000,
-        greetingTimeout: 12000,
-        socketTimeout: 15000
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 12000
       };
 
-      // Gmail SSL/Service bypass for cloud hosts (like Render) that block port 587
       if (finalHost.includes('gmail.com') || (finalUser && finalUser.includes('@gmail.com'))) {
         transportOptions = {
           service: 'gmail',
           auth: { user: finalUser, pass: finalPass },
-          connectionTimeout: 12000,
-          greetingTimeout: 12000,
-          socketTimeout: 15000
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 12000
         };
       }
 
       const transporter = nodemailer.createTransport(transportOptions);
-
       const info = await transporter.sendMail({
         from: `"${finalSenderName}" <${finalSender}>`,
         to: targetEmail,
         subject: '✓ BizDev CRM Test Email Verification',
-        text: 'This is a verified test email from your BizDev CRM system. Automated email dispatch is configured correctly.',
-        html: `
-          <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-            <div style="background: #0c8ee9; padding: 24px; color: white;">
-              <h2 style="margin: 0; font-size: 20px;">✓ SMTP Email Verification Successful</h2>
-              <p style="margin: 4px 0 0 0; opacity: 0.9; font-size: 13px;">BizDev CRM System Diagnostic</p>
-            </div>
-            <div style="padding: 24px; color: #1e293b;">
-              <p style="font-size: 15px;">Hello ${req.user!.name},</p>
-              <p style="font-size: 14px; line-height: 1.6;">Your SMTP configuration is active and working properly. The CRM will automatically dispatch 24-hour and 1-hour meeting reminders and follow-up notifications to team members.</p>
-              <div style="margin-top: 20px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 12px; color: #64748b;">
-                <strong>Host:</strong> ${finalHost}:${finalPort} &bull; <strong>Sender:</strong> ${finalSender}
-              </div>
-            </div>
-          </div>
-        `
+        text: 'This is a verified test email from your BizDev CRM system.',
+        html: emailHtml
       });
 
       await prisma.notificationLog.create({
@@ -142,28 +170,14 @@ export class SettingController {
           channel: 'EMAIL',
           type: 'TEST_EMAIL',
           title: 'Test Email Diagnostic',
-          message: 'Test email delivered successfully',
+          message: 'Test email successfully dispatched via SMTP',
           status: 'SENT',
-          metadataJson: JSON.stringify({ messageId: info.messageId, response: info.response })
+          metadataJson: JSON.stringify(info)
         }
       });
 
-      return sendSuccess(res, { messageId: info.messageId }, '✓ Test email sent successfully.');
+      return sendSuccess(res, { messageId: info.messageId, mode: 'SMTP' }, 'Verified test email sent successfully via SMTP!');
     } catch (err: any) {
-      await prisma.notificationLog.create({
-        data: {
-          userId: req.user!.id,
-          recipientName: req.user!.name,
-          recipientContact: req.body.recipientEmail || req.user!.email,
-          channel: 'EMAIL',
-          type: 'TEST_EMAIL',
-          title: 'Test Email Diagnostic',
-          message: 'Failed to deliver test email',
-          status: 'FAILED',
-          error: err.message
-        }
-      });
-
       return sendError(res, `✕ Email failed. Reason: ${err.message}`, 400);
     }
   }

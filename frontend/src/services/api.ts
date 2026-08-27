@@ -202,6 +202,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ recipientEmail })
     }),
+  testEmail: (payload: any) =>
+    request<any>('/settings/test-email', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+
   sendTestWhatsApp: (phone?: string, message?: string) =>
     request<any>('/settings/test-whatsapp', {
       method: 'POST',

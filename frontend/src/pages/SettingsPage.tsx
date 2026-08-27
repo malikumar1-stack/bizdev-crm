@@ -23,6 +23,7 @@ export const SettingsPage: React.FC = () => {
   const [detailDrawerUserId, setDetailDrawerUserId] = useState<string | null>(null);
 
   // Email Settings
+  const [resendApiKey, setResendApiKey] = useState('');
   const [smtpHost, setSmtpHost] = useState('');
   const [smtpPort, setSmtpPort] = useState('587');
   const [smtpUser, setSmtpUser] = useState('');
@@ -62,6 +63,7 @@ export const SettingsPage: React.FC = () => {
   const loadSettings = async () => {
     try {
       const s = await api.getSettings();
+      setResendApiKey(s.resend_api_key || '');
       setSmtpHost(s.smtp_host || '');
       setSmtpPort(s.smtp_port || '587');
       setSmtpUser(s.smtp_user || '');
@@ -115,6 +117,7 @@ export const SettingsPage: React.FC = () => {
     setEmailStatusMessage('');
     try {
       await api.updateSettings({
+        resend_api_key: resendApiKey,
         smtp_host: smtpHost,
         smtp_port: smtpPort,
         smtp_user: smtpUser,
@@ -122,7 +125,7 @@ export const SettingsPage: React.FC = () => {
         smtp_sender_name: smtpSenderName,
         smtp_sender_email: smtpSenderEmail
       });
-      setEmailStatusMessage('✓ SMTP Email settings saved successfully.');
+      setEmailStatusMessage('✓ Email transport settings saved successfully.');
     } catch (err: any) {
       setEmailStatusMessage(`✕ Error saving settings: ${err.message}`);
     } finally {
@@ -136,6 +139,7 @@ export const SettingsPage: React.FC = () => {
     try {
       // Auto-save form inputs first so test always uses latest values
       await api.updateSettings({
+        resend_api_key: resendApiKey,
         smtp_host: smtpHost,
         smtp_port: smtpPort,
         smtp_user: smtpUser,
@@ -144,10 +148,18 @@ export const SettingsPage: React.FC = () => {
         smtp_sender_email: smtpSenderEmail
       });
 
-      const res = await api.sendTestEmail(smtpSenderEmail || smtpUser);
-      setEmailStatusMessage('✓ Verified test email sent successfully! Please check your inbox.');
+      const res = await api.testEmail({
+        resendApiKey,
+        host: smtpHost,
+        port: smtpPort,
+        user: smtpUser,
+        password: smtpPass,
+        senderName: smtpSenderName,
+        senderEmail: smtpSenderEmail
+      });
+      setEmailStatusMessage(`✓ Test email delivered successfully! (Transport: ${res.mode || 'Active'})`);
     } catch (err: any) {
-      setEmailStatusMessage(`✕ Email failed: ${err.message}`);
+      setEmailStatusMessage(`✕ ${err.message || 'Failed to send test email'}`);
     } finally {
       setEmailTestLoading(false);
     }
@@ -394,124 +406,125 @@ export const SettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 2: Email SMTP Config */}
+      {/* Tab 2: Email Transport Settings */}
       {activeTab === 'EMAIL' && isAdmin && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm max-w-2xl">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-            SMTP Email Transport Settings
-          </h3>
-          <p className="text-xs text-slate-500 mb-4">
-            Connect your corporate SMTP server (Gmail, Office 365, AWS SES, SendGrid) to automatically deliver 24h and 1h meeting reminders.
-          </p>
-
-          <form onSubmit={handleSaveEmail} className="space-y-4">
-            {emailStatusMessage && (
-              <div className={`p-3 rounded-xl text-xs font-semibold ${
-                emailStatusMessage.startsWith('✓')
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                  : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
-              }`}>
-                {emailStatusMessage}
-              </div>
-            )}
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                  SMTP Host
-                </label>
-                <input
-                  type="text"
-                  placeholder="smtp.gmail.com or mail.yourdomain.com"
-                  value={smtpHost}
-                  onChange={(e) => setSmtpHost(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                  Port
-                </label>
-                <input
-                  type="number"
-                  placeholder="587"
-                  value={smtpPort}
-                  onChange={(e) => setSmtpPort(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
-                />
-              </div>
+        <div className="space-y-6 max-w-2xl">
+          {/* Card 1: Resend Cloud HTTPS API (Recommended for Render) */}
+          <div className="bg-gradient-to-br from-brand-50 to-sky-50 dark:from-brand-950/40 dark:to-sky-950/40 rounded-2xl border border-brand-200 dark:border-brand-800/60 p-6 shadow-xs">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-lg">⚡</span>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Resend HTTPS Email API (100% Reliable & Recommended for Cloud/Render)
+              </h3>
             </div>
+            <p className="text-xs text-slate-600 dark:text-slate-300 mb-4 leading-relaxed">
+              Cloud hosting providers (like Render) block raw SMTP ports to prevent spam. <strong>Resend</strong> delivers automated reminders over standard HTTPS port 443 with <strong>100% deliverability</strong> and 3,000 free emails/month.
+            </p>
 
-            <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleSaveEmail} className="space-y-3.5">
+              {emailStatusMessage && (
+                <div className={`p-3 rounded-xl text-xs font-semibold ${
+                  emailStatusMessage.startsWith('✓')
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                    : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                }`}>
+                  {emailStatusMessage}
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                  SMTP Username
-                </label>
-                <input
-                  type="text"
-                  placeholder="user@yourdomain.com"
-                  value={smtpUser}
-                  onChange={(e) => setSmtpUser(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                  SMTP Password
+                  Resend API Key
                 </label>
                 <input
                   type="password"
-                  placeholder="••••••••"
-                  value={smtpPass}
-                  onChange={(e) => setSmtpPass(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
+                  placeholder="re_123456789_abcdef..."
+                  value={resendApiKey}
+                  onChange={(e) => setResendApiKey(e.target.value)}
+                  className="w-full rounded-xl border border-brand-300 dark:border-brand-700 bg-white dark:bg-slate-900 p-2.5 text-xs font-mono font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
                 />
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  👉 Free key in 15 seconds: Go to <a href="https://resend.com" target="_blank" rel="noreferrer" className="text-brand-600 underline font-bold">resend.com</a> (Click 'Sign in with Google' &rarr; 'API Keys' &rarr; 'Create API Key').
+                </p>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                  Sender Name
-                </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                    Sender Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="BizDev CRM"
+                    value={smtpSenderName}
+                    onChange={(e) => setSmtpSenderName(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                    Sender Email
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="onboarding@resend.dev (or your domain)"
+                    value={smtpSenderEmail}
+                    onChange={(e) => setSmtpSenderEmail(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <Button type="submit" loading={emailSaving}>
+                  Save Email Settings
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  loading={emailTestLoading}
+                  onClick={handleTestEmail}
+                >
+                  ⚡ Send Test Email
+                </Button>
+              </div>
+            </form>
+          </div>
+
+          {/* Card 2: Traditional SMTP (For local/VPS hosting) */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs">
+            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+              Alternative: Traditional SMTP (Self-Hosted VPS)
+            </h4>
+            <p className="text-xs text-slate-400 mb-3">
+              Use if you deploy BizDev CRM to a private VPS server where outbound raw SMTP ports are open.
+            </p>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2">
+                <label className="block text-[11px] font-semibold text-slate-500 mb-1">SMTP Host</label>
                 <input
                   type="text"
-                  placeholder="BizDev CRM Reminders"
-                  value={smtpSenderName}
-                  onChange={(e) => setSmtpSenderName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
+                  placeholder="smtp.mailgun.org"
+                  value={smtpHost}
+                  onChange={(e) => setSmtpHost(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-2 text-xs"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                  Sender Email Address
-                </label>
+                <label className="block text-[11px] font-semibold text-slate-500 mb-1">Port</label>
                 <input
-                  type="email"
-                  placeholder="crm-notifications@yourdomain.com"
-                  value={smtpSenderEmail}
-                  onChange={(e) => setSmtpSenderEmail(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
+                  type="number"
+                  value={smtpPort}
+                  onChange={(e) => setSmtpPort(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-2 text-xs"
                 />
               </div>
             </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <Button type="submit" loading={emailSaving}>
-                Save SMTP Settings
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                loading={emailTestLoading}
-                onClick={handleTestEmail}
-              >
-                Send Test Email
-              </Button>
-            </div>
-          </form>
+          </div>
         </div>
       )}
+
 
       {/* Tab 3: WhatsApp API Config */}
       {activeTab === 'WHATSAPP' && isAdmin && (
