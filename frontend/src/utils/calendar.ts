@@ -35,11 +35,11 @@ export function downloadIcsFile(meeting: Partial<IMeeting>) {
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//BizDev CRM//Meeting Reminder//EN',
+    'PRODID:-//JS Investments//BD CRM Meeting Reminder//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
-    'UID:bizdev-' + (meeting.id || Date.now()) + '@bizdevcrm.com',
+    'UID:jsil-crm-' + (meeting.id || Date.now()) + '@jsil.com',
     'DTSTAMP:' + formatDate(new Date()),
     'DTSTART:' + formatDate(start),
     'DTEND:' + formatDate(end),

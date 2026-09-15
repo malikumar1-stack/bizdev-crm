@@ -1,8 +1,8 @@
 export interface NotificationPayload {
-  userId: string;
+  userId?: string;
   title: string;
   message: string;
-  type: 'MEETING_REMINDER' | 'FOLLOWUP_REMINDER' | 'TASK_REMINDER' | 'OVERDUE_ALERT' | 'SYSTEM';
+  type: 'MEETING_REMINDER' | 'FOLLOWUP_REMINDER' | 'TASK_REMINDER' | 'OVERDUE_ALERT' | 'SYSTEM' | 'TEST_WHATSAPP' | 'TEST_EMAIL';
   entityType?: 'MEETING' | 'FOLLOWUP' | 'TASK' | 'CLIENT' | 'OPPORTUNITY';
   entityId?: string;
   channels?: ('IN_APP' | 'EMAIL' | 'WHATSAPP' | 'BROWSER')[];

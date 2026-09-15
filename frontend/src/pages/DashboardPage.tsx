@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { IDashboardMetrics, IMeeting, IFollowup } from '../types';
+import { IDashboardMetrics, IMeeting, IFollowup, IMeetingReminder } from '../types';
 import { KpiCard } from '../components/dashboard/KpiCard';
 import { ActivityCharts } from '../components/dashboard/ActivityCharts';
 import { Card } from '../components/common/Card';
@@ -10,16 +10,13 @@ import { PostMeetingDrawer } from '../components/meetings/PostMeetingDrawer';
 import {
   Users,
   Calendar,
-  CalendarDays,
   Clock,
-  CheckCircle2,
   TrendingUp,
   AlertTriangle,
-  ArrowRight,
-  Sparkles,
-  Phone,
-  Video,
-  Check
+  Check,
+  MessageSquare,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -56,10 +53,55 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     }
   };
 
+  // Helper to render accurate reminder badge
+  const renderReminderBadge = (meeting: IMeeting) => {
+    const reminders = meeting.reminders || [];
+    const waReminders = reminders.filter(r => r.channel === 'WHATSAPP');
+
+    const failedWa = waReminders.find(r => r.status === 'FAILED');
+    if (failedWa) {
+      return (
+        <span 
+          title={`WhatsApp reminder failed: ${failedWa.errorMessage || 'Provider rejection'}`}
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+        >
+          <AlertCircle className="w-3 h-3 text-rose-500" />
+          <span>⚠️ Reminder Failed</span>
+        </span>
+      );
+    }
+
+    const sent24h = meeting.reminded24h || waReminders.some(r => r.reminderType === '24H' && r.status === 'SENT');
+    const sent1h = meeting.reminded1h || waReminders.some(r => r.reminderType === '1H' && r.status === 'SENT');
+
+    if (sent24h && sent1h) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+          <span>✓ Reminders Sent</span>
+        </span>
+      );
+    }
+
+    if (sent24h) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-300 dark:border-sky-800">
+          <span>✓ 24h Sent, 1h Scheduled</span>
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+        <span>⏰ 24h & 1h Scheduled</span>
+      </span>
+    );
+  };
+
   if (loading || !metrics) {
     return (
       <div className="py-20 text-center text-sm text-slate-400">
-        Loading CRM dashboard & analytics...
+        Loading JS Investments BD dashboard & analytics...
       </div>
     );
   }
@@ -78,7 +120,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                 Action Required: {metrics.overdueFollowups} Overdue Follow-up{metrics.overdueFollowups !== 1 ? 's' : ''}
               </h4>
               <p className="text-xs text-amber-800 dark:text-amber-400 mt-0.5">
-                Ensure timely client communication to maintain healthy relationship scores.
+                Ensure timely client engagement to maintain JS Investments business development momentum.
               </p>
             </div>
           </div>
@@ -134,7 +176,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         {/* Upcoming Meetings Card */}
         <Card
           title="Upcoming Meetings"
-          subtitle="Scheduled client discussions and automated reminders"
+          subtitle="Scheduled client engagements and automated WhatsApp reminders"
           action={
             <Button size="sm" variant="ghost" onClick={() => onNavigate('meetings')}>
               View All
@@ -145,32 +187,58 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
             {metrics.upcomingMeetings.length === 0 ? (
               <p className="text-center text-xs text-slate-400 py-6">No upcoming meetings scheduled</p>
             ) : (
-              metrics.upcomingMeetings.slice(0, 4).map((m) => (
+              metrics.upcomingMeetings.slice(0, 5).map((m) => (
                 <div
                   key={m.id}
-                  className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between gap-3"
+                  className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col gap-2.5"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 font-bold text-xs flex flex-col items-center justify-center shrink-0">
-                      <span>{format(new Date(m.startTime), 'dd')}</span>
-                      <span className="text-[10px] uppercase font-semibold">{format(new Date(m.startTime), 'MMM')}</span>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-[#002D62]/10 text-[#002D62] dark:bg-amber-500/20 dark:text-amber-400 font-bold text-xs flex flex-col items-center justify-center shrink-0 border border-[#002D62]/20">
+                        <span>{format(new Date(m.startTime), 'dd')}</span>
+                        <span className="text-[10px] uppercase font-semibold">{format(new Date(m.startTime), 'MMM')}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{m.title}</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          <strong className="text-slate-700 dark:text-slate-300">{m.client?.company?.name}</strong> &bull; {format(new Date(m.startTime), 'hh:mm a')} PKT
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{m.title}</h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                        {m.client?.company?.name} &bull; {format(new Date(m.startTime), 'hh:mm a')}
-                      </p>
+
+                    <div className="shrink-0">
+                      {renderReminderBadge(m)}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setCompletingMeeting(m)}
-                    >
-                      Post-Meeting
-                    </Button>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800 text-xs">
+                    <span className="text-[11px] text-slate-500">
+                      BD Exec: <strong className="text-slate-700 dark:text-slate-300">{m.assignedUser?.name || 'Unassigned'}</strong>
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const phone = (m.assignedUser?.whatsappNumber || m.assignedUser?.phone || m.client?.primaryContact?.whatsapp || m.client?.primaryContact?.phone || '').replace(/\D/g, '');
+                          const formattedTime = format(new Date(m.startTime), 'dd MMM yyyy, hh:mm a');
+                          const msg = `*JS Investments Meeting Reminder*\n\n*Client:* ${m.client?.company?.name || 'Client'}\n*Date & Time:* ${formattedTime} PKT\n*Location:* ${m.location || m.meetingLink || 'Head Office'}\n*Agenda:* ${m.agenda || 'Business Discussion'}`;
+                          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 text-[11px] font-bold transition-all border border-emerald-200 dark:border-emerald-800"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                        <span>WhatsApp</span>
+                      </button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCompletingMeeting(m)}
+                      >
+                        Post-Meeting
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -181,7 +249,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         {/* Today's Follow-ups Checklist Card */}
         <Card
           title="Today's Follow-ups"
-          subtitle="Action items and relationship touchpoints"
+          subtitle="Client communication and pipeline next steps"
           action={
             <Button size="sm" variant="ghost" onClick={() => onNavigate('followups')}>
               View All
@@ -207,7 +275,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{f.title}</p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                        {f.client?.company?.name} &bull; Due: {f.dueTime || '17:00'}
+                        {f.client?.company?.name} &bull; Due: {f.dueTime || '17:00'} PKT
                       </p>
                     </div>
                   </div>

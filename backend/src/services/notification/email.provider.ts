@@ -28,20 +28,20 @@ export class EmailProvider implements INotificationProvider {
     const port = parseInt(dbPort?.value || `${config.email.port}`, 10);
     const user = dbUser?.value || config.email.user;
     const pass = dbPass?.value || config.email.password;
-    const sender = dbSender?.value || config.email.from || 'onboarding@resend.dev';
-    const senderName = dbSenderName?.value || 'BizDev CRM';
+    const sender = dbSender?.value || config.email.from || 'crm@jsil.com';
+    const senderName = dbSenderName?.value || 'JS Investments BD CRM';
 
     const htmlContent = `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-        <div style="background: #0c8ee9; padding: 24px; color: white;">
-          <h2 style="margin: 0; font-size: 20px; font-weight: 600;">${payload.title}</h2>
-          <p style="margin: 4px 0 0 0; opacity: 0.9; font-size: 14px;">Business Development CRM Notification</p>
+        <div style="background: #002D62; padding: 24px; color: white; border-bottom: 3px solid #E5A823;">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #ffffff;">${payload.title}</h2>
+          <p style="margin: 4px 0 0 0; opacity: 0.9; font-size: 13px; color: #E5A823; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">JS Investments – Business Development CRM</p>
         </div>
         <div style="padding: 24px; color: #1e293b; line-height: 1.6;">
           <p style="font-size: 15px; margin-top: 0;">${payload.message.replace(/\n/g, '<br/>')}</p>
           ${payload.metadata?.detailsHtml || ''}
-          <div style="margin-top: 24px; padding: 16px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #64748b;">
-            <strong>Scheduled in BizDev CRM</strong> &bull; Please check your dashboard for full details.
+          <div style="margin-top: 24px; padding: 16px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #64748b; border-left: 3px solid #002D62;">
+            <strong>JS Investments Business Development System</strong> &bull; Please check your CRM dashboard for full meeting details.
           </div>
         </div>
       </div>

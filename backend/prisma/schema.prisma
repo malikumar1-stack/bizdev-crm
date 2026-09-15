@@ -179,6 +179,7 @@ model Meeting {
   createdByUser User?                @relation("MeetingCreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
   participants  MeetingParticipant[]
   followups     Followup[]
+  reminders     MeetingReminder[]
 
   @@index([clientId, status])
   @@index([assignedUserId, startTime])
@@ -387,4 +388,30 @@ model AIMessage {
   conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@map("ai_messages")
+}
+
+model MeetingReminder {
+  id                String    @id @default(uuid())
+  meetingId         String
+  reminderType      String    // 24H, 1H, CUSTOM
+  channel           String    @default("WHATSAPP") // WHATSAPP, EMAIL, ALL
+  recipientType     String    @default("ASSIGNED_USER") // ASSIGNED_USER, CLIENT_CONTACT
+  recipientName     String?
+  recipientContact  String    // Normalized Phone or Email
+  scheduledTime     DateTime
+  status            String    @default("SCHEDULED") // SCHEDULED, PROCESSING, SENT, FAILED, CANCELLED
+  attemptsCount     Int       @default(0)
+  attemptedAt       DateTime?
+  providerMessageId String?
+  providerResponse  String?   // Stored as JSON string
+  errorMessage      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId, reminderType])
+  @@index([status, scheduledTime])
+  @@index([scheduledTime])
+  @@map("meeting_reminders")
 }

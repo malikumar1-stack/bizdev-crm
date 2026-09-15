@@ -1,6 +1,7 @@
 import { prisma } from '../../utils/prisma';
 import { IPostMeetingWorkflowPayload } from '../../types';
 import { notificationService } from '../notification/notification.service';
+import { ReminderScheduler } from '../scheduler/reminder.scheduler';
 import { logger } from '../../utils/logger';
 
 export class MeetingWorkflowService {
@@ -48,7 +49,7 @@ export class MeetingWorkflowService {
     const assignedUser = assignedUserId || currentMeeting.assignedUserId || currentUserId;
     const now = new Date();
 
-    // Perform all database mutations inside a single atomic transaction
+    // Perform all database mutations inside a single atomic transaction with extended timeout for cloud DB latency
     const transactionResult = await prisma.$transaction(async (tx) => {
       // 1. Update the Current Meeting
       const updatedMeeting = await tx.meeting.update({
@@ -218,9 +219,14 @@ export class MeetingWorkflowService {
         nextFollowup: newFollowup,
         task: newTask
       };
-    });
+    }, { timeout: 25000, maxWait: 15000 });
 
-    // 7. Send In-App & Email Notifications safely outside the transaction
+    // 7. Auto-provision reminders for next meeting if created
+    if (transactionResult.nextMeeting) {
+      await ReminderScheduler.provisionRemindersForMeeting(transactionResult.nextMeeting.id);
+    }
+
+    // 8. Send In-App & Email Notifications safely outside the transaction
     try {
       await notificationService.send({
         userId: assignedUser,

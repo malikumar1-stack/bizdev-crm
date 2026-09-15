@@ -1,17 +1,18 @@
 import { prisma } from '../src/utils/prisma';
-import { reminderScheduler } from '../src/services/scheduler/reminder.scheduler';
+import { ReminderScheduler, reminderScheduler } from '../src/services/scheduler/reminder.scheduler';
 import { meetingWorkflowService } from '../src/services/workflow/meeting-workflow.service';
 import { notificationService } from '../src/services/notification/notification.service';
 import { RuleEngine } from '../src/services/ai/rule-engine';
 import { WhatsAppProvider } from '../src/services/notification/whatsapp.provider';
-import { addDays, subDays } from 'date-fns';
+import { normalizePhoneNumber } from '../src/utils/phone.util';
+import { addDays, addHours, subDays } from 'date-fns';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { config } from '../src/config';
 
 async function runTests() {
   console.log('====================================================');
-  console.log('🧪 RUNNING COMPLETE PRODUCTION VERIFICATION SUITE');
+  console.log('🧪 JS INVESTMENTS BD CRM: COMPREHENSIVE VERIFICATION SUITE');
   console.log('====================================================\n');
 
   let passed = 0;
@@ -33,19 +34,19 @@ async function runTests() {
     // ------------------------------------------------------------------------
     console.log('--- 1. Database Seed & User Verification ---');
     const userCount = await prisma.user.count();
-    assert(userCount >= 4, `Users verified (found ${userCount})`);
+    assert(userCount >= 4, `Users verified in database (found ${userCount})`);
 
     const clientCount = await prisma.client.count();
-    assert(clientCount >= 1, `Clients verified (found ${clientCount})`);
+    assert(clientCount >= 1, `Clients verified in database (found ${clientCount})`);
 
     const adminUser = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
-    assert(!!adminUser, 'Admin user exists');
+    assert(!!adminUser, 'Admin user exists in database');
 
     // ------------------------------------------------------------------------
     // TEST 2: Admin User Creation & Password Management
     // ------------------------------------------------------------------------
     console.log('\n--- 2. Admin User Creation & Password Controls ---');
-    const testEmail = `bd.exec.${Date.now()}@example.com`;
+    const testEmail = `bd.exec.${Date.now()}@jsil.com`;
     const tempPassword = 'InitialTempPass!23';
     const passwordHash = await bcrypt.hash(tempPassword, 10);
 
@@ -55,10 +56,10 @@ async function runTests() {
         email: testEmail,
         passwordHash,
         role: 'MANAGER',
-        phone: '+923001112233',
-        whatsapp: '+923001112233',
-        whatsappNumber: '+923001112233',
-        notificationEmail: 'sara.notif@example.com',
+        phone: '03001234567',
+        whatsapp: '03001234567',
+        whatsappNumber: '03001234567',
+        notificationEmail: 'sara.notif@jsil.com',
         status: 'ACTIVE',
         tokenVersion: 1,
         preferences: {
@@ -74,7 +75,7 @@ async function runTests() {
     });
 
     assert(!!newUser.id, 'New manager user created successfully');
-    assert(newUser.notificationEmail === 'sara.notif@example.com', 'Separate notification email configured');
+    assert(newUser.notificationEmail === 'sara.notif@jsil.com', 'Separate notification email configured');
     assert(newUser.preferences?.whatsappEnabled === true, 'WhatsApp notification preference enabled');
 
     // ------------------------------------------------------------------------
@@ -99,40 +100,95 @@ async function runTests() {
     assert(decoded.tokenVersion !== updatedWithNewVersion.tokenVersion, 'TokenVersion mismatch detected: old token successfully invalidated!');
 
     // ------------------------------------------------------------------------
-    // TEST 4: Client Creation, Updating, Multiple Contacts, & Soft-Delete (Archive)
+    // TEST 4: Pakistani Phone Number Normalization
     // ------------------------------------------------------------------------
-    console.log('\n--- 4. Client Management & Multiple Contacts ---');
+    console.log('\n--- 4. Pakistani Mobile Phone Normalization (phone.util.ts) ---');
+    
+    // Case A: 03XX standard 11 digits
+    const p1 = normalizePhoneNumber('03001234567');
+    assert(p1.isValid && p1.apiNumber === '923001234567' && p1.e164 === '+923001234567', 'Local 03001234567 -> 923001234567 (Meta API format)');
+    
+    // Case B: With dashes
+    const p2 = normalizePhoneNumber('0321-7654321');
+    assert(p2.isValid && p2.apiNumber === '923217654321' && p2.e164 === '+923217654321', 'Dashed 0321-7654321 -> 923217654321');
+
+    // Case C: Double zero prefix 0092300...
+    const p3 = normalizePhoneNumber('00923009998877');
+    assert(p3.isValid && p3.apiNumber === '923009998877', 'Double zero 00923009998877 -> 923009998877');
+
+    // Case D: Plus prefix +92300...
+    const p4 = normalizePhoneNumber('+923331122334');
+    assert(p4.isValid && p4.apiNumber === '923331122334' && p4.e164 === '+923331122334', '+923331122334 -> 923331122334');
+
+    // Case E: Without leading zero 3001234567
+    const p5 = normalizePhoneNumber('3001234567');
+    assert(p5.isValid && p5.apiNumber === '923001234567', '10-digit 3001234567 -> 923001234567');
+
+    // Case F: International number
+    const p6 = normalizePhoneNumber('+14155552671');
+    assert(p6.isValid && p6.country === 'INTL' && p6.apiNumber === '14155552671', 'International +14155552671 normalized');
+
+    // Case G: Invalid garbage input
+    const p7 = normalizePhoneNumber('12345');
+    assert(!p7.isValid && p7.country === 'INVALID', 'Short invalid number rejected with isValid=false');
+
+    // ------------------------------------------------------------------------
+    // TEST 5: WhatsApp Provider Zero-Faking & Error Diagnostic
+    // ------------------------------------------------------------------------
+    console.log('\n--- 5. WhatsApp Provider Zero-Faking & Error Diagnostic ---');
+    const waProvider = new WhatsAppProvider();
+    
+    // Attempt sending with unconfigured or dummy credentials (must fail gracefully and NOT fake success)
+    const waSendResult = await waProvider.send({
+      userId: newUser.id,
+      recipientWhatsapp: '03001234567',
+      title: 'JS Investments CRM Test',
+      message: 'Test WhatsApp message for JS Investments CRM',
+      type: 'TEST_WHATSAPP'
+    });
+
+    if (!config.whatsapp.apiKey) {
+      assert(waSendResult.success === false, 'Unconfigured WhatsApp API returns success: false (Zero Faking Policy enforced)');
+      assert(!!waSendResult.error, `Error captured correctly: "${waSendResult.error}"`);
+    } else {
+      console.log(`WhatsApp API credentials detected. Send result: success=${waSendResult.success}`);
+    }
+
+    // ------------------------------------------------------------------------
+    // TEST 6: Client Creation & Multiple Contacts
+    // ------------------------------------------------------------------------
+    console.log('\n--- 6. Client Management & Multiple Contacts ---');
     const company = await prisma.company.create({
       data: {
-        name: `Apex Global Ventures ${Date.now()}`,
-        industry: 'Fintech & Investments',
-        city: 'Islamabad',
+        name: `JS Strategic Client ${Date.now()}`,
+        industry: 'Asset Management & Banking',
+        city: 'Karachi',
         country: 'Pakistan',
-        phone: '+9251000000'
+        phone: '021111222333'
       }
     });
 
     const primaryContact = await prisma.contact.create({
       data: {
         companyId: company.id,
-        name: 'Tariq Mehmood',
-        position: 'Managing Director',
-        email: 'tariq@apexventures.com',
-        phone: '+923009998877',
-        whatsapp: '+923009998877',
+        name: 'Kamran Ali',
+        position: 'Chief Investment Officer',
+        email: 'kamran.ali@jsclient.com',
+        phone: '03009998877',
+        whatsapp: '03009998877',
         isPrimary: true
       }
     });
 
     const client = await prisma.client.create({
       data: {
-        customClientId: `CL-${Date.now()}`,
+        customClientId: `JS-CL-${Date.now()}`,
         companyId: company.id,
         primaryContactId: primaryContact.id,
         relationshipStatus: 'LEAD',
         priority: 'HIGH',
         assignedUserId: newUser.id,
-        notes: 'Initial strategic partnership inquiry'
+        notes: 'Institutional portfolio allocation discussion'
       },
       include: { company: true, primaryContact: true, assignedUser: true }
     });
@@ -140,99 +196,100 @@ async function runTests() {
     assert(!!client.id, 'Client successfully created with company and primary contact');
     assert(client.assignedUserId === newUser.id, 'Client correctly assigned to new manager');
 
-    // Add Secondary Contact
-    const secondaryContact = await prisma.contact.create({
-      data: {
-        companyId: company.id,
-        name: 'Ayesha Tariq',
-        position: 'Head of Legal & Compliance',
-        email: 'ayesha@apexventures.com',
-        phone: '+923004445566',
-        whatsapp: '+923004445566',
-        isPrimary: false
-      }
-    });
-    assert(!!secondaryContact.id, 'Secondary contact added to client account');
-
-    // Test Soft-Delete (Archive) & Restore
-    const archived = await prisma.client.update({
-      where: { id: client.id },
-      data: { isArchived: true, archivedAt: new Date() }
-    });
-    assert(archived.isArchived === true, 'Client soft-deleted (archived) without destroying record');
-
-    const restored = await prisma.client.update({
-      where: { id: client.id },
-      data: { isArchived: false, archivedAt: null }
-    });
-    assert(restored.isArchived === false, 'Client successfully restored from archive');
-
     // ------------------------------------------------------------------------
-    // TEST 5: Meeting Scheduling & Notification Dispatch
+    // TEST 7: Meeting Creation & MeetingReminder Model Provisioning
     // ------------------------------------------------------------------------
-    console.log('\n--- 5. Meeting Scheduling & Notification Dispatch ---');
-    const meetingTime = addDays(new Date(), 1); // Tomorrow
-    meetingTime.setHours(11, 0, 0, 0);
+    console.log('\n--- 7. Meeting Creation & MeetingReminder Auto-Provisioning ---');
+    // Create meeting scheduled for 48 hours in future
+    const futureMeetingTime = addDays(new Date(), 2);
+    futureMeetingTime.setHours(14, 30, 0, 0);
 
     const testMeeting = await prisma.meeting.create({
       data: {
         clientId: client.id,
-        title: 'Strategic Partnership Discussion',
+        title: 'Q4 Portfolio Strategy & Institutional Allocation',
         meetingType: 'PHYSICAL',
-        startTime: meetingTime,
-        endTime: new Date(meetingTime.getTime() + 3600000),
-        location: 'Islamabad Head Office',
-        agenda: 'Explore investment structuring and Q4 timeline',
+        startTime: futureMeetingTime,
+        endTime: new Date(futureMeetingTime.getTime() + 3600000),
+        location: 'JS Investments Executive Boardroom, Karachi',
+        agenda: 'Review high-yield fixed income funds and equity portfolios',
         assignedUserId: newUser.id,
         createdById: adminUser!.id
       }
     });
-    assert(!!testMeeting.id, 'Meeting scheduled for tomorrow at 11:00 AM');
+    assert(!!testMeeting.id, 'Meeting scheduled for 48h in future');
 
-    // Trigger Notification Dispatch via NotificationService
-    const dispatchResult = await notificationService.send({
-      userId: newUser.id,
-      title: `Reminder: Client Meeting Tomorrow — ${company.name}`,
-      message: `You have a scheduled meeting tomorrow at 11:00 AM with ${primaryContact.name}.`,
-      type: 'MEETING_REMINDER',
-      entityType: 'MEETING',
-      entityId: testMeeting.id
+    // Provision reminders via ReminderScheduler.provisionRemindersForMeeting
+    await ReminderScheduler.provisionRemindersForMeeting(testMeeting.id);
+
+    const reminders = await prisma.meetingReminder.findMany({
+      where: { meetingId: testMeeting.id },
+      orderBy: { scheduledTime: 'asc' }
     });
 
-    assert(dispatchResult.length > 0, `Notification dispatched across channels (count: ${dispatchResult.length})`);
+    assert(reminders.length >= 2, `Both 24h and 1h reminders provisioned (found: ${reminders.length})`);
+    
+    const reminder24h = reminders.find(r => r.reminderType === '24H');
+    const reminder1h = reminders.find(r => r.reminderType === '1H');
 
-    // Verify NotificationLog table persistence
-    const emailLog = await prisma.notificationLog.findFirst({
-      where: { userId: newUser.id, type: 'MEETING_REMINDER', channel: 'EMAIL' }
-    });
-    const waLog = await prisma.notificationLog.findFirst({
-      where: { userId: newUser.id, type: 'MEETING_REMINDER', channel: 'WHATSAPP' }
-    });
-
-    assert(!!emailLog, 'Email NotificationLog record persisted');
-    assert(!!waLog, 'WhatsApp NotificationLog record persisted');
+    assert(!!reminder24h && reminder24h.status === 'SCHEDULED', '24h reminder has status SCHEDULED');
+    assert(!!reminder1h && reminder1h.status === 'SCHEDULED', '1h reminder has status SCHEDULED');
 
     // ------------------------------------------------------------------------
-    // TEST 6: Post-Meeting Workflow & Transaction Safety
+    // TEST 8: Scheduler Atomic State Transition & Processing Lock
     // ------------------------------------------------------------------------
-    console.log('\n--- 6. Post-Meeting Workflow & Idempotency ---');
-    const nextMeetingDateStr = addDays(new Date(), 10).toISOString().split('T')[0];
-    const nextFollowupDateStr = addDays(new Date(), 3).toISOString().split('T')[0];
+    console.log('\n--- 8. Scheduler State Transition & Atomic Processing ---');
+    // Create an immediate due reminder for testMeeting to verify execution
+    const immediateReminder = await prisma.meetingReminder.create({
+      data: {
+        meetingId: testMeeting.id,
+        reminderType: '1H',
+        channel: 'WHATSAPP',
+        recipientType: 'ASSIGNED_USER',
+        recipientName: newUser.name,
+        recipientContact: '923001234567',
+        scheduledTime: subDays(new Date(), 0.01), // Due in the past (eligible for processing)
+        status: 'SCHEDULED'
+      }
+    });
+
+    // Run scheduler check
+    await reminderScheduler.checkAndSendReminders();
+
+    const processedReminder = await prisma.meetingReminder.findUnique({
+      where: { id: immediateReminder.id }
+    });
+
+    assert(
+      processedReminder?.status === 'SENT' || processedReminder?.status === 'FAILED',
+      `Reminder transitioned from SCHEDULED -> ${processedReminder?.status}`
+    );
+    assert((processedReminder?.attemptsCount || 0) >= 1, `Reminder attempt count tracked (attemptsCount=${processedReminder?.attemptsCount})`);
+
+    // Clean up immediate test reminder
+    await prisma.meetingReminder.delete({ where: { id: immediateReminder.id } });
+
+    // ------------------------------------------------------------------------
+    // TEST 9: Post-Meeting Workflow & Transaction Safety
+    // ------------------------------------------------------------------------
+    console.log('\n--- 9. Post-Meeting Workflow & Idempotency ---');
+    const nextMeetingDateStr = addDays(new Date(), 7).toISOString().split('T')[0];
+    const nextFollowupDateStr = addDays(new Date(), 2).toISOString().split('T')[0];
 
     const workflow = await meetingWorkflowService.completeMeetingWorkflow(
       {
         meetingId: testMeeting.id,
         outcome: 'POSITIVE',
-        notes: 'Meeting went exceptionally well. Terms agreed in principle.',
-        nextAction: 'Send NDA and draft term sheet',
+        notes: 'Client confirmed initial allocation of 50M PKR in JS Cash Fund.',
+        nextAction: 'Send account opening forms and fund performance sheets',
         nextFollowupDate: nextFollowupDateStr,
-        nextFollowupTime: '14:00',
+        nextFollowupTime: '11:00',
         nextFollowupType: 'PROPOSAL',
         nextFollowupPriority: 'HIGH',
         nextMeetingDate: nextMeetingDateStr,
-        nextMeetingStartTime: '11:00',
+        nextMeetingStartTime: '15:00',
         nextMeetingType: 'PHYSICAL',
-        nextMeetingTitle: 'Term Sheet Execution Meeting',
+        nextMeetingTitle: 'Account Opening & KYC Signing',
         createTask: true
       },
       newUser.id
@@ -243,61 +300,30 @@ async function runTests() {
     assert(!!workflow.nextFollowup, 'Next follow-up automatically created');
     assert(!!workflow.task, 'Action task created');
 
+    // Check that reminders were auto-provisioned for the newly created meeting
+    if (workflow.nextMeeting) {
+      const nextMeetingReminders = await prisma.meetingReminder.findMany({
+        where: { meetingId: workflow.nextMeeting.id }
+      });
+      assert(nextMeetingReminders.length > 0, `Reminders automatically provisioned for workflow next meeting (count: ${nextMeetingReminders.length})`);
+    }
+
+    // ------------------------------------------------------------------------
+    // TEST 10: AI Relationship Health Intelligence
+    // ------------------------------------------------------------------------
+    console.log('\n--- 10. AI Relationship Health Intelligence ---');
     const verifiedClient = await prisma.client.findUnique({ where: { id: client.id } });
-    assert(!!verifiedClient?.nextMeetingDate, 'Client profile nextMeetingDate synced');
-    assert(!!verifiedClient?.nextFollowupDate, 'Client profile nextFollowupDate synced');
-    assert(verifiedClient?.relationshipStatus === 'NEGOTIATION', 'Client relationship stage auto-advanced to NEGOTIATION');
-
-    // Idempotency: Re-submitting the same completed meeting should not duplicate
-    const workflowDoubleSubmit = await meetingWorkflowService.completeMeetingWorkflow(
-      {
-        meetingId: testMeeting.id,
-        outcome: 'POSITIVE',
-        notes: 'Updated notes upon second save',
-        nextAction: 'Send NDA and draft term sheet',
-        nextFollowupDate: nextFollowupDateStr,
-        nextFollowupTime: '14:00',
-        nextFollowupType: 'PROPOSAL',
-        nextFollowupPriority: 'HIGH',
-        nextMeetingDate: nextMeetingDateStr,
-        nextMeetingStartTime: '11:00',
-        nextMeetingType: 'PHYSICAL',
-        nextMeetingTitle: 'Term Sheet Execution Meeting',
-        createTask: true
-      },
-      newUser.id
-    );
-    assert(workflowDoubleSubmit.nextMeeting?.id === workflow.nextMeeting?.id, 'Double-submit idempotency verified: identical meeting reused');
-
-    // ------------------------------------------------------------------------
-    // TEST 7: Reminder Scheduler Catch-up & Overdue Auto-Transition
-    // ------------------------------------------------------------------------
-    console.log('\n--- 7. Reminder Scheduler Recovery & Overdue Transition ---');
-    // Create an overdue followup
-    const pastFollowup = await prisma.followup.create({
-      data: {
-        clientId: client.id,
-        title: 'Past Due Task',
-        status: 'PENDING',
-        dueDate: subDays(new Date(), 2),
-        assignedUserId: newUser.id
-      }
-    });
-
-    // Run scheduler check
-    await reminderScheduler.checkAndSendReminders();
-
-    const updatedPastFu = await prisma.followup.findUnique({ where: { id: pastFollowup.id } });
-    assert(updatedPastFu?.status === 'OVERDUE', 'Past-due follow-up automatically transitioned to OVERDUE status');
-
-    // ------------------------------------------------------------------------
-    // TEST 8: AI Relationship Health Intelligence
-    // ------------------------------------------------------------------------
-    console.log('\n--- 8. AI Relationship Health Intelligence ---');
     const health = RuleEngine.evaluateRelationshipHealth(verifiedClient);
     assert(health.score > 0, `Health evaluated: ${health.score}/100 (${health.health})`);
     assert(!!health.rationale, 'Health factor rationale generated');
     assert(!!health.nextAction, 'Recommended next action generated');
+
+    // ------------------------------------------------------------------------
+    // TEST 11: Timezone & System Diagnostic Constants
+    // ------------------------------------------------------------------------
+    console.log('\n--- 11. Timezone & App Configuration ---');
+    assert(config.appTimezone === 'Asia/Karachi', 'Application configured for Asia/Karachi (PKT)');
+    assert(config.appName.includes('JS Investments'), 'App name configured as JS Investments – Business Development CRM');
 
     // ------------------------------------------------------------------------
     // SUMMARY

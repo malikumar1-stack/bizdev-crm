@@ -6,6 +6,10 @@ export class InAppProvider implements INotificationProvider {
   name = 'IN_APP';
 
   async send(payload: NotificationPayload) {
+    if (!payload.userId) {
+      return { success: true, channel: this.name, details: { skipped: true } };
+    }
+
     try {
       const notification = await prisma.notification.create({
         data: {

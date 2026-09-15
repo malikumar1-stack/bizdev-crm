@@ -5,6 +5,7 @@ import { WhatsAppProvider } from './whatsapp.provider';
 import { PushProvider } from './push.provider';
 import { prisma } from '../../utils/prisma';
 import { logger } from '../../utils/logger';
+import { normalizePhoneNumber } from '../../utils/phone.util';
 
 export class NotificationService {
   private providers: Map<string, INotificationProvider> = new Map();
@@ -22,21 +23,29 @@ export class NotificationService {
 
   async send(payload: NotificationPayload) {
     // 1. Fetch recipient user details and notification preferences
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      include: { preferences: true }
-    });
+    let user = null;
+    if (payload.userId) {
+      user = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        include: { preferences: true }
+      });
+    }
 
     const pref = user?.preferences;
 
-    // Determine destination addresses from user record
+    // Determine destination addresses from payload or user record
     const recipientEmail = payload.recipientEmail || user?.notificationEmail || user?.email;
-    const recipientPhone = payload.recipientPhone || user?.phone;
-    const recipientWhatsapp = payload.recipientWhatsapp || user?.whatsappNumber || user?.whatsapp || user?.phone;
+    const rawPhone = payload.recipientWhatsapp || payload.recipientPhone || user?.whatsappNumber || user?.whatsapp || user?.phone;
 
-    payload.recipientEmail = recipientEmail;
-    payload.recipientPhone = recipientPhone || undefined;
-    payload.recipientWhatsapp = recipientWhatsapp || undefined;
+    let normalizedPhoneStr = '';
+    if (rawPhone) {
+      const norm = normalizePhoneNumber(rawPhone);
+      normalizedPhoneStr = norm.isValid ? norm.e164 : rawPhone;
+      payload.recipientWhatsapp = norm.isValid ? norm.apiNumber : rawPhone;
+      payload.recipientPhone = norm.isValid ? norm.apiNumber : rawPhone;
+    }
+
+    payload.recipientEmail = recipientEmail || undefined;
 
     const channelsToSend: string[] = [];
 
@@ -63,34 +72,40 @@ export class NotificationService {
           const res = await provider.send(payload);
           results.push(res);
 
-          // Log delivery status into NotificationLog table
-          const contactTarget = ch === 'EMAIL' ? recipientEmail : (ch === 'WHATSAPP' ? recipientWhatsapp : (ch === 'BROWSER' ? 'Browser Push' : 'In-App Center'));
-          const logStatus = res.details?.mode === 'official_api' ? 'SENT' : (res.details?.mode === 'simulated_zero_cost_log' || res.details?.mode === 'click_to_chat_url' ? 'NOT_CONFIGURED' : (res.success ? 'SENT' : 'FAILED'));
-          const logError = res.error || (logStatus === 'NOT_CONFIGURED' && ch === 'WHATSAPP' ? 'WhatsApp integration not configured. Direct wa.me link generated.' : (logStatus === 'NOT_CONFIGURED' && ch === 'EMAIL' ? 'SMTP credentials not configured. Logged to simulated sandbox.' : null));
+          // Determine contact string for audit log
+          const contactTarget = ch === 'EMAIL' 
+            ? (recipientEmail || 'N/A')
+            : (ch === 'WHATSAPP' 
+                ? (normalizedPhoneStr || 'N/A') 
+                : (ch === 'BROWSER' ? 'Browser Push' : 'In-App Center'));
+
+          const logStatus = res.success 
+            ? 'SENT' 
+            : (res.details?.mode === 'unconfigured' ? 'NOT_CONFIGURED' : 'FAILED');
 
           await prisma.notificationLog.create({
             data: {
-              userId: payload.userId,
-              recipientName: user?.name || 'User',
-              recipientContact: contactTarget || 'N/A',
+              userId: payload.userId || null,
+              recipientName: user?.name || payload.metadata?.recipientName || 'Stakeholder',
+              recipientContact: contactTarget,
               channel: ch,
               type: payload.type || 'SYSTEM',
               title: payload.title,
               message: payload.message,
               status: logStatus,
-              error: logError,
+              error: res.error || null,
               metadataJson: JSON.stringify(res.details || {})
             }
           });
         } catch (err: any) {
-          logger.error(`Provider ${ch} failed:`, err);
+          logger.error(`[NOTIFICATION SERVICE] Provider ${ch} failed:`, err);
           results.push({ success: false, channel: ch, error: err.message });
 
           await prisma.notificationLog.create({
             data: {
-              userId: payload.userId,
-              recipientName: user?.name || 'User',
-              recipientContact: recipientEmail || recipientPhone || 'N/A',
+              userId: payload.userId || null,
+              recipientName: user?.name || payload.metadata?.recipientName || 'Stakeholder',
+              recipientContact: ch === 'EMAIL' ? (recipientEmail || 'N/A') : (normalizedPhoneStr || 'N/A'),
               channel: ch,
               type: payload.type || 'SYSTEM',
               title: payload.title,

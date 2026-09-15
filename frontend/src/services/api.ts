@@ -213,6 +213,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ phone, message })
     }),
+  getDiagnostics: () => request<import('../types').ISystemDiagnostics>('/settings/diagnostics'),
+  getReminderLogs: (params?: Record<string, string>) => {
+    const qs = params ? new URLSearchParams(params).toString() : '';
+    return request<import('../types').IMeetingReminder[]>(`/settings/reminder-logs${qs ? '?' + qs : ''}`);
+  },
+  triggerScheduler: () => request<any>('/scheduler/trigger', { method: 'POST' }),
   getNotificationLogs: (params?: Record<string, string>) => {
     const qs = params ? new URLSearchParams(params).toString() : '';
     return request<INotificationLog[]>(`/settings/notification-logs${qs ? '?' + qs : ''}`);

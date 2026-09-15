@@ -102,18 +102,18 @@ export class AIService {
 
     // 4. Handle "Draft email" / "Follow-up message"
     if (lower.includes('draft') || lower.includes('email') || lower.includes('template')) {
-      const draft = `Subject: Follow-up & Next Steps — [Company Name] / BizDev Partnership
+      const draft = `Subject: Follow-up & Next Steps — [Company Name] / JS Investments Partnership
 
 Hi [Contact Name],
 
-Thank you for taking the time to speak with our team today. It was a pleasure learning more about [Company Name]'s strategic priorities for this quarter.
+Thank you for taking the time to speak with our Business Development team today. It was a pleasure learning more about [Company Name]'s strategic investment and portfolio priorities.
 
 Based on our discussion, here is a quick summary of what we covered:
-1. Overview of your current operational goals and key challenges.
-2. How our enterprise solutions can accelerate your growth timeline.
+1. Overview of your current investment goals and liquidity requirements.
+2. How JS Investments' mutual funds and institutional portfolio solutions align with your objectives.
 3. Agreed next action items and deliverables.
 
-As agreed, we are preparing the tailored proposal and term sheet for your review. We look forward to our next scheduled checkpoint on [Date/Time].
+As agreed, we are preparing the tailored institutional proposal and performance fact sheets for your review. We look forward to our next scheduled checkpoint on [Date/Time].
 
 Please let me know if you have any questions in the meantime.
 
@@ -121,7 +121,7 @@ Best regards,
 
 [Your Name]
 Business Development Team
-BizDev CRM`;
+JS Investments Limited`;
       return { reply: `✉️ **Generated Executive Follow-up Draft:**\n\n` + draft };
     }
 
@@ -150,7 +150,7 @@ BizDev CRM`;
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: `You are an expert AI Business Development Copilot for BizDev CRM. Answer concisely, professionally, and accurately: "${prompt}"` }] }]
+              contents: [{ parts: [{ text: `You are an expert AI Business Development Copilot for JS Investments BD CRM. Answer concisely, professionally, and accurately: "${prompt}"` }] }]
             })
           }
         );

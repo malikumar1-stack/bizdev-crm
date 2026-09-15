@@ -15,6 +15,7 @@ import {
   Building2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { JSILogo } from '../common/JSILogo';
 import { clsx } from 'clsx';
 
 interface SidebarProps {
@@ -42,17 +43,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => 
   return (
     <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0 min-h-screen border-r border-slate-800">
       {/* Brand Header */}
-      <div className="p-5 flex items-center gap-3 border-b border-slate-800">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-sky-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
-          <Building2 className="w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="font-bold text-base tracking-tight text-white flex items-center gap-1.5">
-            BizDev CRM
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-300 font-semibold border border-brand-500/30">AI</span>
-          </h1>
-          <p className="text-xs text-slate-400">Enterprise Growth Suite</p>
-        </div>
+      <div className="p-5 flex items-center border-b border-slate-800">
+        <JSILogo size="md" />
       </div>
 
       {/* Navigation Links */}

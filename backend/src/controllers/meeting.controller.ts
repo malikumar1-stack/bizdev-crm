@@ -4,6 +4,7 @@ import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { meetingWorkflowService } from '../services/workflow/meeting-workflow.service';
 import { notificationService } from '../services/notification/notification.service';
+import { ReminderScheduler } from '../services/scheduler/reminder.scheduler';
 import { AuditService } from '../services/audit/audit.service';
 import { formatTimeInTz } from '../config/timezone';
 
@@ -36,8 +37,9 @@ export class MeetingController {
           orderBy: { startTime: 'asc' },
           include: {
             client: { include: { company: true, primaryContact: true } },
-            assignedUser: { select: { id: true, name: true, email: true } },
-            participants: true
+            assignedUser: { select: { id: true, name: true, email: true, whatsappNumber: true, phone: true } },
+            participants: true,
+            reminders: true
           }
         })
       ]);
@@ -58,7 +60,8 @@ export class MeetingController {
           assignedUser: true,
           createdByUser: true,
           participants: true,
-          followups: true
+          followups: true,
+          reminders: true
         }
       });
       if (!meeting) return sendError(res, 'Meeting not found', 404);
@@ -106,7 +109,18 @@ export class MeetingController {
             }))
           } : undefined
         },
-        include: { client: { include: { company: true, primaryContact: true } }, assignedUser: true }
+        include: {
+          client: { include: { company: true, primaryContact: true } },
+          assignedUser: true
+        }
+      });
+
+      // Auto-provision 24h and 1h MeetingReminder records
+      await ReminderScheduler.provisionRemindersForMeeting(meeting.id);
+
+      // Fetch newly provisioned reminders
+      const reminders = await prisma.meetingReminder.findMany({
+        where: { meetingId: meeting.id }
       });
 
       // Update Client nextMeetingDate & status
@@ -127,7 +141,7 @@ export class MeetingController {
           type: 'MEETING_SCHEDULED',
           title: `Meeting Scheduled: ${title}`,
           description: `Scheduled for ${formattedTime} with ${meeting.client.company.name}`,
-          metadataJson: JSON.stringify({ meetingId: meeting.id })
+          metadataJson: JSON.stringify({ meetingId: meeting.id, remindersCount: reminders.length })
         }
       });
 
@@ -135,7 +149,7 @@ export class MeetingController {
       await notificationService.send({
         userId: assignedUser,
         title: `New Meeting Scheduled: ${meeting.client.company.name}`,
-        message: `You have been assigned to "${title}" on ${formattedTime}.`,
+        message: `You have been assigned to "${title}" on ${formattedTime}. WhatsApp reminders are scheduled.`,
         type: 'MEETING_REMINDER',
         entityType: 'MEETING',
         entityId: meeting.id
@@ -143,7 +157,7 @@ export class MeetingController {
 
       AuditService.log(req.user!.id, 'CREATE', 'MEETING', meeting.id);
 
-      return sendSuccess(res, meeting, 'Meeting created and reminder scheduled', 201);
+      return sendSuccess(res, { ...meeting, reminders }, 'Meeting created and WhatsApp reminders scheduled for 24 hours and 1 hour before meeting.', 201);
     } catch (err: any) {
       return sendError(res, err.message, 400);
     }
@@ -173,8 +187,13 @@ export class MeetingController {
           nextAction,
           assignedUserId
         },
-        include: { client: { include: { company: true } }, assignedUser: true }
+        include: { client: { include: { company: true } }, assignedUser: true, reminders: true }
       });
+
+      // Re-provision reminders if time or user changed
+      if (startTime || assignedUserId) {
+        await ReminderScheduler.provisionRemindersForMeeting(id);
+      }
 
       AuditService.log(req.user!.id, 'UPDATE', 'MEETING', id, { previous: current, updated });
 

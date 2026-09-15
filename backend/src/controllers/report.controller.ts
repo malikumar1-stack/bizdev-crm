@@ -41,9 +41,13 @@ export class ReportController {
         prisma.opportunity.findMany(),
         prisma.meeting.findMany({
           where: { startTime: { gte: todayStart }, status: 'SCHEDULED' },
-          take: 6,
+          take: 8,
           orderBy: { startTime: 'asc' },
-          include: { client: { include: { company: true, primaryContact: true } }, assignedUser: true }
+          include: {
+            client: { include: { company: true, primaryContact: true } },
+            assignedUser: { select: { id: true, name: true, email: true, whatsappNumber: true, phone: true } },
+            reminders: true
+          }
         }),
         prisma.followup.findMany({
           where: { dueDate: { gte: todayStart, lte: todayEnd }, status: 'PENDING' },

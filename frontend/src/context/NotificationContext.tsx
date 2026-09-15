@@ -107,7 +107,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (res === 'granted') {
         playNotificationChime();
         new Notification('🔔 Meeting Reminders Activated', {
-          body: 'BizDev CRM will alert you on screen before every meeting!',
+          body: 'JS Investments BD CRM will alert you on screen before every meeting!',
           icon: '/favicon.ico'
         });
       }

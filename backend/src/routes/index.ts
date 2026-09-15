@@ -126,7 +126,10 @@ router.get('/settings', SettingController.getSettings);
 router.put('/settings', requireRole('ADMIN'), SettingController.updateSettings);
 router.post('/settings/test-email', requireRole('ADMIN'), SettingController.testEmail);
 router.post('/settings/test-whatsapp', requireRole('ADMIN'), SettingController.testWhatsApp);
+router.get('/settings/diagnostics', requireRole('ADMIN'), SettingController.getDiagnostics);
+router.get('/settings/reminder-logs', requireRole('ADMIN', 'MANAGER'), SettingController.getReminderLogs);
 router.get('/settings/notification-logs', SettingController.getNotificationLogs);
 router.get('/settings/audit-logs', requireRole('ADMIN', 'MANAGER'), SettingController.getAuditLogs);
+router.post('/scheduler/trigger', NotificationController.triggerScheduler);
 
 export default router;

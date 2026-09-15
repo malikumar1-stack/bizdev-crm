@@ -1,12 +1,12 @@
 services:
-  # 1. Backend Web Service (Free Tier - 0 Card Required)
+  # 1. Backend Web Service (Free Tier)
   - type: web
-    name: bizdev-crm-backend
+    name: jsil-bd-crm-backend
     env: node
     plan: free
     rootDir: backend
-    buildCommand: npm install && npm run build
-    startCommand: node dist/index.js
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -18,18 +18,28 @@ services:
         generateValue: true
       - key: APP_TIMEZONE
         value: Asia/Karachi
+      - key: WHATSAPP_API_URL
+        value: https://graph.facebook.com/v19.0
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_API_KEY
+        sync: false
 
-  # 2. Frontend Web Application (Free Tier - 0 Card Required)
+  # 2. Frontend Web Application (Static Site)
   - type: web
-    name: bizdev-crm-frontend
+    name: jsil-bd-crm-frontend
     env: static
     plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
         fromService:
           type: web
-          name: bizdev-crm-backend
+          name: jsil-bd-crm-backend
           property: host

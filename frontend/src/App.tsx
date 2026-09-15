@@ -105,7 +105,7 @@ function MainApp() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white text-sm">
-        Initializing BizDev CRM...
+        Initializing JS Investments BD CRM...
       </div>
     );
   }

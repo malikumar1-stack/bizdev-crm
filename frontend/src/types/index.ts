@@ -140,6 +140,67 @@ export interface IMeeting {
   reminded24h: boolean;
   reminded1h: boolean;
   participants?: any[];
+  reminders?: IMeetingReminder[];
+}
+
+export interface IMeetingReminder {
+  id: string;
+  meetingId: string;
+  reminderType: '24H' | '1H' | string;
+  channel: 'WHATSAPP' | 'EMAIL' | string;
+  recipientType: 'ASSIGNED_USER' | 'CLIENT_CONTACT';
+  recipientName?: string | null;
+  recipientContact: string;
+  scheduledTime: string;
+  status: 'SCHEDULED' | 'PROCESSING' | 'SENT' | 'FAILED' | 'CANCELLED';
+  attemptsCount: number;
+  attemptedAt?: string | null;
+  providerMessageId?: string | null;
+  providerResponse?: string | null;
+  errorMessage?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  meeting?: IMeeting;
+}
+
+export interface ISystemDiagnostics {
+  system: {
+    name: string;
+    environment: string;
+    timezone: string;
+    serverTimeUtc: string;
+    serverTimePkt: string;
+  };
+  scheduler: {
+    isRunning: boolean;
+    status: 'RUNNING' | 'STOPPED';
+    lastRunAt?: string | null;
+    lastSuccessAt?: string | null;
+    lastFailureAt?: string | null;
+  };
+  whatsapp: {
+    configured: boolean;
+    status: 'CONNECTED' | 'NOT_CONFIGURED';
+    apiUrl: string;
+    phoneNumberId?: string | null;
+    hasApiKey: boolean;
+    templateName?: string | null;
+    missingFields: string[];
+  };
+  email: {
+    configured: boolean;
+    status: 'CONNECTED' | 'NOT_CONFIGURED';
+    transport: string;
+  };
+  metrics: {
+    pendingRemindersCount: number;
+    sentTodayCount: number;
+    failedTodayCount: number;
+    totalRemindersCount: number;
+    lastSuccessfulWhatsApp?: string | null;
+    lastFailedWhatsApp?: string | null;
+    lastFailedReason?: string | null;
+  };
 }
 
 export interface IFollowup {

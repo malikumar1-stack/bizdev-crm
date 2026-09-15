@@ -66,9 +66,10 @@ app.use(errorHandler);
 // Start Server & Background Scheduler
 const server = app.listen(config.port, () => {
   logger.info(`===================================================`);
-  logger.info(`🚀 AI-Powered BizDev CRM Backend running on port ${config.port}`);
+  logger.info(`🏛️ JS Investments – Business Development CRM`);
+  logger.info(`🚀 Backend Server running on port ${config.port}`);
   logger.info(`🌐 Health check: http://localhost:${config.port}/health`);
-  logger.info(`⏰ Configured Timezone: ${config.appTimezone}`);
+  logger.info(`⏰ Configured Timezone: ${config.appTimezone} (PKT / UTC+5)`);
   logger.info(`===================================================`);
 
   // Start background reminder scheduler with immediate boot recovery scan
