@@ -40,15 +40,15 @@ router.get('/clients', ClientController.getClients);
 router.post('/clients', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), ClientController.createClient);
 router.get('/clients/:id', ClientController.getClientById);
 router.put('/clients/:id', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), ClientController.updateClient);
-router.patch('/clients/:id/archive', requireRole('ADMIN', 'MANAGER'), ClientController.archiveClient);
-router.patch('/clients/:id/restore', requireRole('ADMIN', 'MANAGER'), ClientController.restoreClient);
-router.delete('/clients/:id', requireRole('ADMIN', 'MANAGER'), ClientController.deleteClient);
+router.patch('/clients/:id/archive', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), ClientController.archiveClient);
+router.patch('/clients/:id/restore', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), ClientController.restoreClient);
+router.delete('/clients/:id', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), ClientController.deleteClient);
 router.get('/clients/:id/timeline', ClientController.getTimeline);
 
 // Client Contacts
 router.post('/clients/:clientId/contacts', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), ClientController.addContact);
 router.put('/clients/contacts/:contactId', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), ClientController.updateContact);
-router.patch('/clients/contacts/:contactId/archive', requireRole('ADMIN', 'MANAGER'), ClientController.archiveContact);
+router.patch('/clients/contacts/:contactId/archive', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), ClientController.archiveContact);
 
 // Meetings
 router.get('/meetings', MeetingController.getMeetings);
@@ -65,20 +65,20 @@ router.post('/followups', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), Follo
 router.put('/followups/:id', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), FollowupController.updateFollowup);
 router.patch('/followups/:id/complete', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), FollowupController.markComplete);
 router.post('/followups/:id/complete', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), FollowupController.markComplete);
-router.delete('/followups/:id', requireRole('ADMIN', 'MANAGER'), FollowupController.deleteFollowup);
+router.delete('/followups/:id', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), FollowupController.deleteFollowup);
 
 // Tasks
 router.get('/tasks', TaskController.getTasks);
 router.post('/tasks', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), TaskController.createTask);
 router.put('/tasks/:id', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), TaskController.updateTask);
-router.delete('/tasks/:id', requireRole('ADMIN', 'MANAGER'), TaskController.deleteTask);
+router.delete('/tasks/:id', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), TaskController.deleteTask);
 
 // Opportunities (Kanban Pipeline)
 router.get('/opportunities', OpportunityController.getOpportunities);
 router.post('/opportunities', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), OpportunityController.createOpportunity);
 router.put('/opportunities/:id', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), OpportunityController.updateOpportunity);
 router.patch('/opportunities/:id/stage', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), OpportunityController.updateStage);
-router.delete('/opportunities/:id', requireRole('ADMIN', 'MANAGER'), OpportunityController.deleteOpportunity);
+router.delete('/opportunities/:id', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), OpportunityController.deleteOpportunity);
 
 // Companies & Contacts
 router.get('/companies', CompanyController.getCompanies);

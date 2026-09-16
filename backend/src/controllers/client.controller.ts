@@ -423,15 +423,40 @@ export class ClientController {
   static async deleteClient(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
-      // Default to archiving if user requests delete
-      const client = await prisma.client.update({
+      const client = await prisma.client.findUnique({
         where: { id },
-        data: { isArchived: true, archivedAt: new Date() }
+        include: { company: true }
       });
-      AuditService.log(req.user!.id, 'ARCHIVE', 'CLIENT', id);
-      return sendSuccess(res, client, 'Client archived successfully');
+
+      if (!client) {
+        return sendError(res, 'Client not found', 404);
+      }
+
+      const companyId = client.companyId;
+      const clientName = client.company?.name || client.customClientId;
+
+      // Permanently delete the client (cascades meetings, tasks, followups, activities)
+      await prisma.client.delete({
+        where: { id }
+      });
+
+      // If company has no other clients and contacts, clean up the company record
+      const otherClients = await prisma.client.count({ where: { companyId } });
+      if (otherClients === 0) {
+        await prisma.company.delete({ where: { id: companyId } }).catch(() => {});
+      }
+
+      AuditService.log(
+        req.user!.id,
+        'DELETE',
+        'CLIENT',
+        id,
+        `Permanently deleted client ${client.customClientId} (${clientName})`
+      );
+
+      return sendSuccess(res, { id, deleted: true }, 'Client permanently deleted successfully');
     } catch (err: any) {
-      return sendError(res, err.message, 400);
+      return sendError(res, err.message || 'Failed to delete client', 400);
     }
   }
 

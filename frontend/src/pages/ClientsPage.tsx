@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import { Button } from '../components/common/Button';
 import { ClientFormModal } from '../components/clients/ClientFormModal';
 import { ImportModal } from '../components/clients/ImportModal';
-import { Download, Upload } from 'lucide-react';
+import { Download, Upload, Trash2 } from 'lucide-react';
 
 interface ClientsPageProps {
   onSelectClient: (clientId: string) => void;
@@ -76,7 +76,23 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
     }
   };
 
-  
+  const handleDeleteClient = async (client: IClient, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const confirmed = window.confirm(
+      `⚠️ Permanently delete client "${client.company?.name || client.customClientId}"?\n\nThis will remove all associated meetings, timeline records, and tasks. This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setClients(prev => prev.filter(c => c.id !== client.id));
+      await api.deleteClient(client.id);
+      loadClients();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete client');
+      loadClients();
+    }
+  };
+
   const [exporting, setExporting] = useState(false);
 
   const handleExport = async (format: 'xlsx' | 'csv') => {
@@ -281,6 +297,13 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
                       Restore
                     </Button>
                   )}
+                  <button
+                    onClick={(e) => handleDeleteClient(c, e)}
+                    title="Permanently delete client"
+                    className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             </div>

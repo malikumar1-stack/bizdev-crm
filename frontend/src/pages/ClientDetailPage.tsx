@@ -58,6 +58,21 @@ export const ClientDetailPage: React.FC<ClientDetailPageProps> = ({
     }
   };
 
+  const handleDelete = async () => {
+    if (!client) return;
+    const confirmed = window.confirm(
+      `⚠️ Permanently delete "${client.company?.name || client.customClientId}"?\n\nThis will remove all associated meetings, contact records, timeline activities, and tasks. This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await api.deleteClient(client.id);
+      onBack();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete client');
+    }
+  };
+
   if (loading) {
     return <div className="p-12 text-center text-xs text-slate-400">Loading client 360 profile...</div>;
   }
@@ -91,7 +106,7 @@ export const ClientDetailPage: React.FC<ClientDetailPageProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => setIsEditModalOpen(true)}>
             Edit Client
           </Button>
@@ -100,6 +115,9 @@ export const ClientDetailPage: React.FC<ClientDetailPageProps> = ({
           </Button>
           <Button size="sm" variant="ghost" onClick={handleArchive}>
             Archive
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleDelete} className="text-rose-600 border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40">
+            Delete
           </Button>
         </div>
       </div>

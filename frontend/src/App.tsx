@@ -50,7 +50,7 @@ function MainApp() {
   const [newMeetingClientId, setNewMeetingClientId] = useState('');
   const [newMeetingContactId, setNewMeetingContactId] = useState('');
   const [newMeetingAssignedUserId, setNewMeetingAssignedUserId] = useState('');
-  const [newMeetingDate, setNewMeetingDate] = useState('');
+  const [newMeetingDate, setNewMeetingDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [newMeetingTime, setNewMeetingTime] = useState('11:00');
   const [newMeetingType, setNewMeetingType] = useState('VIDEO_CONFERENCE');
   const [newMeetingLocation, setNewMeetingLocation] = useState('');
@@ -60,7 +60,11 @@ function MainApp() {
   // Followup Form states
   const [newFollowupTitle, setNewFollowupTitle] = useState('');
   const [newFollowupClientId, setNewFollowupClientId] = useState('');
-  const [newFollowupDate, setNewFollowupDate] = useState('');
+  const [newFollowupDate, setNewFollowupDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    return d.toISOString().split('T')[0];
+  });
   const [newFollowupType, setNewFollowupType] = useState('CALL');
   const [followupLoading, setFollowupLoading] = useState(false);
 
@@ -91,6 +95,16 @@ function MainApp() {
     }
   }, [user]);
 
+  // When opening meeting modal, ensure date is defaulted and latest clients are loaded
+  useEffect(() => {
+    if (showMeetingModal) {
+      loadData();
+      if (!newMeetingDate) {
+        setNewMeetingDate(new Date().toISOString().split('T')[0]);
+      }
+    }
+  }, [showMeetingModal]);
+
   // When client changes in meeting modal, default to their primary contact
   useEffect(() => {
     if (newMeetingClientId) {
@@ -100,7 +114,21 @@ function MainApp() {
         setNewMeetingAssignedUserId(selectedClient.assignedUserId || user?.id || '');
       }
     }
-  }, [newMeetingClientId]);
+  }, [newMeetingClientId, clientsList]);
+
+  const selectedClientForMeeting = clientsList.find((c) => c.id === newMeetingClientId);
+
+  const availableContactsForMeeting = React.useMemo(() => {
+    if (!selectedClientForMeeting) return [];
+    const list: any[] = [];
+    if (selectedClientForMeeting.company?.contacts && Array.isArray(selectedClientForMeeting.company.contacts)) {
+      list.push(...selectedClientForMeeting.company.contacts);
+    }
+    if (selectedClientForMeeting.primaryContact && !list.some(c => c.id === selectedClientForMeeting.primaryContact.id)) {
+      list.unshift(selectedClientForMeeting.primaryContact);
+    }
+    return list;
+  }, [selectedClientForMeeting]);
 
   if (loading) {
     return (
@@ -125,16 +153,24 @@ function MainApp() {
 
   const handleCreateMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newMeetingClientId) {
+      alert('Please select a client account.');
+      return;
+    }
+    if (!newMeetingDate) {
+      alert('Please select a meeting date.');
+      return;
+    }
     setMeetingLoading(true);
     try {
-      const s = new Date(newMeetingDate);
-      const [h, m] = newMeetingTime.split(':').map(Number);
-      s.setHours(h, m, 0, 0);
+      const [year, month, day] = newMeetingDate.split('-').map(Number);
+      const [h, m] = (newMeetingTime || '11:00').split(':').map(Number);
+      const s = new Date(year, month - 1, day, h, m, 0, 0);
       const end = new Date(s.getTime() + 3600000);
 
       await api.createMeeting({
         clientId: newMeetingClientId,
-        title: newMeetingTitle,
+        title: newMeetingTitle || `${selectedClientForMeeting?.company?.name || 'Client'} BD Meeting`,
         meetingType: newMeetingType,
         location: newMeetingLocation || undefined,
         agenda: newMeetingAgenda || undefined,
@@ -145,10 +181,11 @@ function MainApp() {
       });
       setShowMeetingModal(false);
       setNewMeetingTitle('');
+      setNewMeetingClientId('');
+      setNewMeetingContactId('');
       setNewMeetingLocation('');
       setNewMeetingAgenda('');
       loadData();
-      alert('✓ Meeting scheduled! Automated 24h and 1h reminders configured for assigned team member.');
     } catch (err: any) {
       alert(err.message || 'Error scheduling meeting');
     } finally {
@@ -156,22 +193,25 @@ function MainApp() {
     }
   };
 
-  
   const handleCreateOpportunity = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newOppClientId) {
+      alert('Please select a client for this opportunity.');
+      return;
+    }
     setOppLoading(true);
     try {
       await api.createOpportunity({
         clientId: newOppClientId,
-        title: newOppTitle,
-        value: Number(newOppValue),
-        stage: newOppStage,
+        title: newOppTitle || 'Institutional Investment Mandate',
+        value: Number(newOppValue) || 10000,
+        stage: newOppStage || 'LEAD',
         assignedUserId: user?.id
       });
       setShowOpportunityModal(false);
       setNewOppTitle('');
+      setNewOppClientId('');
       loadData();
-      alert('✓ Opportunity created in pipeline!');
     } catch (err: any) {
       alert(err.message || 'Failed to create opportunity');
     } finally {
@@ -181,27 +221,29 @@ function MainApp() {
 
   const handleCreateFollowup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newFollowupClientId) {
+      alert('Please select a client for this follow-up.');
+      return;
+    }
     setFollowupLoading(true);
     try {
       await api.createFollowup({
         clientId: newFollowupClientId,
-        title: newFollowupTitle,
+        title: newFollowupTitle || 'Client Check-in',
         followupType: newFollowupType,
-        dueDate: new Date(newFollowupDate).toISOString(),
+        dueDate: new Date(newFollowupDate || Date.now()).toISOString(),
         assignedUserId: user.id
       });
       setShowFollowupModal(false);
       setNewFollowupTitle('');
+      setNewFollowupClientId('');
       loadData();
-      alert('✓ Follow-up created successfully!');
     } catch (err: any) {
       alert(err.message || 'Error creating follow-up');
     } finally {
       setFollowupLoading(false);
     }
   };
-
-  const selectedClientForMeeting = clientsList.find((c) => c.id === newMeetingClientId);
 
   return (
     <AppLayout
@@ -339,9 +381,11 @@ function MainApp() {
                 onChange={(e) => setNewMeetingClientId(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
               >
-                <option value="">-- Choose Client Account --</option>
+                <option value="">-- Choose Client Account ({clientsList.length} Available) --</option>
                 {clientsList.map((c) => (
-                  <option key={c.id} value={c.id}>{c.company?.name} ({c.primaryContact?.name || 'Contact'})</option>
+                  <option key={c.id} value={c.id}>
+                    {c.company?.name || c.customClientId} ({c.customClientId}){c.primaryContact?.name ? ` — Contact: ${c.primaryContact.name}` : ''}
+                  </option>
                 ))}
               </select>
             </div>
@@ -355,14 +399,10 @@ function MainApp() {
                 onChange={(e) => setNewMeetingContactId(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
               >
-                <option value="">-- Choose Key Stakeholder --</option>
-                {selectedClientForMeeting?.company?.contacts?.map((contact: any) => (
+                <option value="">-- Choose Key Stakeholder / Contact --</option>
+                {availableContactsForMeeting.map((contact: any) => (
                   <option key={contact.id} value={contact.id}>
-                    {contact.name} ({contact.position || 'Contact'})
-                  </option>
-                )) || (selectedClientForMeeting?.primaryContact && (
-                  <option value={selectedClientForMeeting.primaryContact.id}>
-                    {selectedClientForMeeting.primaryContact.name} ({selectedClientForMeeting.primaryContact.position || 'Contact'})
+                    {contact.name} {contact.position ? `(${contact.position})` : ''} {contact.phone ? `• ${contact.phone}` : ''}
                   </option>
                 ))}
               </select>
@@ -559,6 +599,90 @@ function MainApp() {
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button variant="outline" type="button" onClick={() => setShowFollowupModal(false)}>Cancel</Button>
             <Button type="submit" loading={followupLoading}>Save Follow-up</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Quick Add Opportunity Modal */}
+      <Modal
+        isOpen={showOpportunityModal}
+        onClose={() => setShowOpportunityModal(false)}
+        title="Create Pipeline Opportunity"
+        subtitle="Track institutional deals, mutual funds mandates, and advisory progression"
+      >
+        <form onSubmit={handleCreateOpportunity} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
+              Client Account <span className="text-rose-500">*</span>
+            </label>
+            <select
+              required
+              value={newOppClientId}
+              onChange={(e) => setNewOppClientId(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
+            >
+              <option value="">-- Choose Client Account ({clientsList.length} Available) --</option>
+              {clientsList.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.company?.name || c.customClientId} ({c.customClientId})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
+              Opportunity / Deal Title <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Provident Fund Advisory Mandate"
+              value={newOppTitle}
+              onChange={(e) => setNewOppTitle(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                Expected Value (PKR) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                required
+                min="0"
+                step="10000"
+                value={newOppValue}
+                onChange={(e) => setNewOppValue(Number(e.target.value))}
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                Pipeline Stage
+              </label>
+              <select
+                value={newOppStage}
+                onChange={(e) => setNewOppStage(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none dark:text-white"
+              >
+                <option value="LEAD">Lead / Prospect</option>
+                <option value="CONTACTED">Contacted</option>
+                <option value="MEETING">Meeting Scheduled</option>
+                <option value="PROPOSAL">Proposal Sent</option>
+                <option value="NEGOTIATION">Negotiation</option>
+                <option value="WON">Won / Closed</option>
+                <option value="LOST">Lost</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <Button variant="outline" type="button" onClick={() => setShowOpportunityModal(false)}>Cancel</Button>
+            <Button type="submit" loading={oppLoading}>Create Opportunity</Button>
           </div>
         </form>
       </Modal>
