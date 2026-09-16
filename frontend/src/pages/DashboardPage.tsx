@@ -107,19 +107,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   }
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-4 sm:space-y-6 pb-12">
       {/* Overdue Items Alert Banner */}
       {(metrics.overdueFollowups > 0 || metrics.overdueItems.tasks.length > 0) && (
-        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-3">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="p-2 rounded-xl bg-amber-500 text-white shrink-0">
               <AlertTriangle className="w-5 h-5" />
             </div>
-            <div>
-              <h4 className="text-sm font-bold text-amber-950 dark:text-amber-200">
+            <div className="min-w-0">
+              <h4 className="text-xs sm:text-sm font-bold text-amber-950 dark:text-amber-200">
                 Action Required: {metrics.overdueFollowups} Overdue Follow-up{metrics.overdueFollowups !== 1 ? 's' : ''}
               </h4>
-              <p className="text-xs text-amber-800 dark:text-amber-400 mt-0.5">
+              <p className="text-xs text-amber-800 dark:text-amber-400 mt-0.5 line-clamp-2 sm:line-clamp-none">
                 Ensure timely client engagement to maintain JS Investments business development momentum.
               </p>
             </div>
@@ -128,7 +128,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
             size="sm"
             variant="outline"
             onClick={() => onNavigate('followups')}
-            className="border-amber-300 text-amber-900 dark:text-amber-200 hover:bg-amber-100"
+            className="border-amber-300 text-amber-900 dark:text-amber-200 hover:bg-amber-100 text-xs shrink-0 self-end sm:self-auto"
           >
             Review Overdue
           </Button>
@@ -136,49 +136,49 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       )}
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         <KpiCard
           title="Total Clients"
           value={metrics.totalClients}
-          subtitle={`${metrics.activeClients} Active Relationships`}
-          icon={<Users className="w-5 h-5" />}
+          subtitle={`${metrics.activeClients} Active`}
+          icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />}
           variant="brand"
           onClick={() => onNavigate('clients')}
         />
         <KpiCard
-          title="Meetings Tomorrow"
+          title="Meetings"
           value={metrics.meetingsTomorrow}
-          subtitle={`${metrics.meetingsToday} Scheduled for Today`}
-          icon={<Calendar className="w-5 h-5" />}
+          subtitle={`${metrics.meetingsToday} Today`}
+          icon={<Calendar className="w-4 h-4 sm:w-5 sm:h-5" />}
           variant="sky"
           onClick={() => onNavigate('meetings')}
         />
         <KpiCard
-          title="Overdue Follow-ups"
+          title="Overdue"
           value={metrics.overdueFollowups}
-          subtitle={`${metrics.followupsDueThisWeek} Due This Week`}
-          icon={<Clock className="w-5 h-5" />}
+          subtitle={`${metrics.followupsDueThisWeek} Due This Wk`}
+          icon={<Clock className="w-4 h-4 sm:w-5 sm:h-5" />}
           variant="rose"
           onClick={() => onNavigate('followups')}
         />
         <KpiCard
           title="Active Pipeline"
           value={`$${(metrics.totalPipelineValue / 1000).toFixed(0)}k`}
-          subtitle={`${metrics.openOpportunities} Deals (${metrics.winRate}% Win Rate)`}
-          icon={<TrendingUp className="w-5 h-5" />}
+          subtitle={`${metrics.openOpportunities} Deals (${metrics.winRate}%)`}
+          icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />}
           variant="emerald"
           onClick={() => onNavigate('pipeline')}
         />
       </div>
 
       {/* Core Operational Section: Upcoming Meetings & Today's Follow-ups */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Upcoming Meetings Card */}
         <Card
           title="Upcoming Meetings"
           subtitle="Scheduled client engagements and automated WhatsApp reminders"
           action={
-            <Button size="sm" variant="ghost" onClick={() => onNavigate('meetings')}>
+            <Button size="sm" variant="ghost" onClick={() => onNavigate('meetings')} className="text-xs">
               View All
             </Button>
           }
@@ -190,17 +190,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
               metrics.upcomingMeetings.slice(0, 5).map((m) => (
                 <div
                   key={m.id}
-                  className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col gap-2.5"
+                  className="p-3 sm:p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col gap-2.5"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-[#002D62]/10 text-[#002D62] dark:bg-amber-500/20 dark:text-amber-400 font-bold text-xs flex flex-col items-center justify-center shrink-0 border border-[#002D62]/20">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#002D62]/10 text-[#002D62] dark:bg-amber-500/20 dark:text-amber-400 font-bold text-xs flex flex-col items-center justify-center shrink-0 border border-[#002D62]/20">
                         <span>{format(new Date(m.startTime), 'dd')}</span>
-                        <span className="text-[10px] uppercase font-semibold">{format(new Date(m.startTime), 'MMM')}</span>
+                        <span className="text-[9px] uppercase font-semibold">{format(new Date(m.startTime), 'MMM')}</span>
                       </div>
                       <div className="min-w-0">
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{m.title}</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{m.title}</h4>
+                        <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
                           <strong className="text-slate-700 dark:text-slate-300">{m.client?.company?.name}</strong> &bull; {format(new Date(m.startTime), 'hh:mm a')} PKT
                         </p>
                       </div>
@@ -211,12 +211,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800 text-xs">
-                    <span className="text-[11px] text-slate-500">
-                      BD Exec: <strong className="text-slate-700 dark:text-slate-300">{m.assignedUser?.name || 'Unassigned'}</strong>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800 text-xs flex-wrap gap-2">
+                    <span className="text-[11px] text-slate-500 truncate">
+                      BD: <strong className="text-slate-700 dark:text-slate-300">{m.assignedUser?.name || 'Unassigned'}</strong>
                     </span>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
                         onClick={() => {
@@ -225,7 +225,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                           const msg = `*JS Investments Meeting Reminder*\n\n*Client:* ${m.client?.company?.name || 'Client'}\n*Date & Time:* ${formattedTime} PKT\n*Location:* ${m.location || m.meetingLink || 'Head Office'}\n*Agenda:* ${m.agenda || 'Business Discussion'}`;
                           window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
                         }}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 text-[11px] font-bold transition-all border border-emerald-200 dark:border-emerald-800"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px] sm:text-[11px] font-bold transition-all border border-emerald-200 dark:border-emerald-800"
                       >
                         <MessageSquare className="w-3 h-3" />
                         <span>WhatsApp</span>
@@ -235,6 +235,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         size="sm"
                         variant="outline"
                         onClick={() => setCompletingMeeting(m)}
+                        className="text-xs px-2 sm:px-3"
                       >
                         Post-Meeting
                       </Button>

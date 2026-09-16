@@ -113,11 +113,11 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Client Portfolio</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Client Portfolio</h2>
           <p className="text-xs text-slate-500">Enterprise accounts, stakeholder contacts, and relationship health</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -126,8 +126,9 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
             size="sm"
             onClick={() => setIsImportModalOpen(true)}
             icon={<Upload className="w-4 h-4 text-[#002D62] dark:text-blue-400" />}
+            className="text-xs"
           >
-            Import Spreadsheet
+            Import
           </Button>
           <Button
             variant="outline"
@@ -135,14 +136,16 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
             loading={exporting}
             onClick={() => handleExport('xlsx')}
             icon={<Download className="w-4 h-4 text-emerald-600" />}
+            className="text-xs"
           >
-            Export Excel (.xlsx)
+            Export .xlsx
           </Button>
           <Button
             variant="ghost"
             size="sm"
             loading={exporting}
             onClick={() => handleExport('csv')}
+            className="text-xs px-2"
           >
             CSV
           </Button>
@@ -152,6 +155,7 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
               setClientToEdit(null);
               setIsFormModalOpen(true);
             }}
+            className="text-xs font-bold"
           >
             + Add Client
           </Button>
@@ -160,7 +164,7 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
 
       {/* Tabs & Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1 border-b sm:border-b-0 border-slate-200 dark:border-slate-800 pb-1">
+        <div className="flex items-center gap-1 border-b sm:border-b-0 border-slate-200 dark:border-slate-800 pb-1 shrink-0">
           <button
             onClick={() => setViewTab('ACTIVE')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
@@ -183,42 +187,44 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2">
           <input
             type="text"
-            placeholder="Search by company or contact..."
+            placeholder="Search company or contact..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 w-64"
+            className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-56"
           />
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:outline-none"
-          >
-            <option value="">All Statuses</option>
-            <option value="LEAD">Lead</option>
-            <option value="CONTACTED">Contacted</option>
-            <option value="MEETING_SCHEDULED">Meeting Scheduled</option>
-            <option value="MEETING_COMPLETED">Meeting Completed</option>
-            <option value="FOLLOWUP_REQUIRED">Follow-up Required</option>
-            <option value="NEGOTIATION">Negotiation</option>
-            <option value="ACTIVE_CLIENT">Active Client</option>
-            <option value="DORMANT">Dormant</option>
-          </select>
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full sm:w-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:outline-none"
+            >
+              <option value="">All Statuses</option>
+              <option value="LEAD">Lead</option>
+              <option value="CONTACTED">Contacted</option>
+              <option value="MEETING_SCHEDULED">Meeting Scheduled</option>
+              <option value="MEETING_COMPLETED">Meeting Completed</option>
+              <option value="FOLLOWUP_REQUIRED">Follow-up Required</option>
+              <option value="NEGOTIATION">Negotiation</option>
+              <option value="ACTIVE_CLIENT">Active Client</option>
+              <option value="DORMANT">Dormant</option>
+            </select>
 
-          <select
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:outline-none"
-          >
-            <option value="">All Priorities</option>
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
-            <option value="URGENT">Urgent</option>
-          </select>
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="w-full sm:w-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:outline-none"
+            >
+              <option value="">All Priorities</option>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="URGENT">Urgent</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -226,7 +232,7 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
       {loading ? (
         <div className="p-12 text-center text-xs text-slate-400">Loading client portfolio...</div>
       ) : clients.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {clients.map((c) => (
             <div
               key={c.id}

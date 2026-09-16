@@ -87,15 +87,17 @@ export const ClientDetailPage: React.FC<ClientDetailPageProps> = ({
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Top Breadcrumb & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-3">
-          <Button size="sm" variant="outline" onClick={onBack}>&larr; Back</Button>
+          <Button size="sm" variant="outline" onClick={onBack} className="text-xs">
+            &larr; Back
+          </Button>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-mono font-bold text-slate-400">{client.customClientId}</span>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{client.company?.name}</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">{client.company?.name}</h2>
               {client.isArchived && (
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
                   Archived
@@ -107,26 +109,26 @@ export const ClientDetailPage: React.FC<ClientDetailPageProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="outline" onClick={() => setIsEditModalOpen(true)}>
-            Edit Client
+          <Button size="sm" variant="outline" onClick={() => setIsEditModalOpen(true)} className="text-xs">
+            Edit
           </Button>
-          <Button size="sm" onClick={() => onScheduleMeeting(client.id)}>
+          <Button size="sm" onClick={() => onScheduleMeeting(client.id)} className="text-xs font-bold">
             Schedule Meeting
           </Button>
-          <Button size="sm" variant="ghost" onClick={handleArchive}>
+          <Button size="sm" variant="ghost" onClick={handleArchive} className="text-xs">
             Archive
           </Button>
-          <Button size="sm" variant="outline" onClick={handleDelete} className="text-rose-600 border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40">
+          <Button size="sm" variant="outline" onClick={handleDelete} className="text-xs text-rose-600 border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40">
             Delete
           </Button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1 overflow-x-auto whitespace-nowrap scrollbar-none">
         <button
           onClick={() => setActiveTab('OVERVIEW')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'OVERVIEW'
               ? 'bg-brand-500 text-white shadow-sm'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
@@ -136,17 +138,17 @@ export const ClientDetailPage: React.FC<ClientDetailPageProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('CONTACTS')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'CONTACTS'
               ? 'bg-brand-500 text-white shadow-sm'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
           }`}
         >
-          Key Stakeholders & Contacts ({client.company?.contacts?.length || 0})
+          Stakeholders & Contacts ({client.company?.contacts?.length || 0})
         </button>
         <button
           onClick={() => setActiveTab('MEETINGS')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'MEETINGS'
               ? 'bg-brand-500 text-white shadow-sm'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
@@ -156,13 +158,13 @@ export const ClientDetailPage: React.FC<ClientDetailPageProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('TIMELINE')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'TIMELINE'
               ? 'bg-brand-500 text-white shadow-sm'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
           }`}
         >
-          Activity Audit Timeline
+          Activity Timeline
         </button>
       </div>
 

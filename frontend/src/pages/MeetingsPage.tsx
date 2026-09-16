@@ -89,26 +89,26 @@ export const MeetingsPage: React.FC<MeetingsPageProps> = ({ onOpenSchedule }) =>
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="space-y-4 sm:space-y-6 pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Meetings & Client Engagements</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <h2 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Meetings & Client Engagements</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             JS Investments Business Development Schedule &bull; Automated 24h/1h WhatsApp Reminders (PKT)
           </p>
         </div>
-        <Button onClick={onOpenSchedule} icon={<Plus className="w-4 h-4" />}>
+        <Button onClick={onOpenSchedule} icon={<Plus className="w-4 h-4" />} className="text-xs font-bold shrink-0 self-start sm:self-auto">
           Schedule Meeting
         </Button>
       </div>
 
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Filter:</span>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#002D62] focus:outline-none dark:text-white"
+            className="flex-1 sm:flex-none rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#002D62] focus:outline-none dark:text-white"
           >
             <option value="">All Meeting Statuses</option>
             <option value="SCHEDULED">Scheduled</option>
@@ -122,27 +122,27 @@ export const MeetingsPage: React.FC<MeetingsPageProps> = ({ onOpenSchedule }) =>
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         {meetings.map((m) => (
           <div
             key={m.id}
-            className="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
+            className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h4 className="text-base font-bold text-slate-900 dark:text-white">{m.title}</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-                  <Building className="w-3.5 h-3.5 text-[#002D62] dark:text-amber-400" />
-                  <strong className="text-slate-800 dark:text-slate-200">{m.client?.company?.name}</strong>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">{m.title}</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 truncate">
+                  <Building className="w-3.5 h-3.5 text-[#002D62] dark:text-amber-400 shrink-0" />
+                  <strong className="text-slate-800 dark:text-slate-200 truncate">{m.client?.company?.name}</strong>
                   {m.client?.primaryContact?.name && (
-                    <span className="text-slate-400">({m.client.primaryContact.name})</span>
+                    <span className="text-slate-400 truncate hidden sm:inline">({m.client.primaryContact.name})</span>
                   )}
                 </p>
               </div>
-              <Badge variant={m.status === 'COMPLETED' ? 'success' : 'info'}>{m.status}</Badge>
+              <Badge variant={m.status === 'COMPLETED' ? 'success' : 'info'} size="sm">{m.status}</Badge>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300">
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800">
                 <span className="text-[10px] text-slate-400 block font-medium">Date & Time (PKT)</span>
                 <span className="font-bold text-slate-900 dark:text-white">{format(new Date(m.startTime), 'dd MMM yyyy, hh:mm a')}</span>
@@ -154,7 +154,7 @@ export const MeetingsPage: React.FC<MeetingsPageProps> = ({ onOpenSchedule }) =>
             </div>
 
             {/* Reminder Status Info */}
-            <div className="p-2.5 rounded-xl bg-[#002D62]/5 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+            <div className="p-2.5 rounded-xl bg-[#002D62]/5 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between flex-wrap gap-2">
               <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                 WhatsApp Reminders:
               </span>
@@ -173,8 +173,8 @@ export const MeetingsPage: React.FC<MeetingsPageProps> = ({ onOpenSchedule }) =>
               </p>
             )}
 
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -183,10 +183,10 @@ export const MeetingsPage: React.FC<MeetingsPageProps> = ({ onOpenSchedule }) =>
                     const msg = `*JS Investments Meeting Reminder*\n\n*Client:* ${m.client?.company?.name || 'Client'}\n*Contact:* ${m.client?.primaryContact?.name || 'Stakeholder'}\n*Date & Time:* ${formattedTime} PKT\n*Format:* ${m.meetingType}\n*Location:* ${m.location || m.meetingLink || 'Office'}\n*Agenda:* ${m.agenda || 'Business Development Discussion'}\n\nPlease review client notes prior to the meeting.`;
                     window.open(`https://wa.me/${phone || ''}?text=${encodeURIComponent(msg)}`, '_blank');
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-100 transition-all"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-100 transition-all"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
-                  <span>WhatsApp Briefing</span>
+                  <span>WhatsApp</span>
                 </button>
 
                 <button
@@ -200,8 +200,8 @@ export const MeetingsPage: React.FC<MeetingsPageProps> = ({ onOpenSchedule }) =>
               </div>
 
               {m.status === 'SCHEDULED' && (
-                <Button size="sm" onClick={() => setCompletingMeeting(m)}>
-                  Complete & Next Steps
+                <Button size="sm" onClick={() => setCompletingMeeting(m)} className="text-xs">
+                  Complete
                 </Button>
               )}
             </div>

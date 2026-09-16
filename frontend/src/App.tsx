@@ -299,12 +299,12 @@ function MainApp() {
 
       {currentPage === 'pipeline' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Deal Pipeline</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Deal Pipeline</h2>
               <p className="text-xs text-slate-500">Visual drag-and-drop opportunity progression and forecasting</p>
             </div>
-            <Button size="sm" onClick={() => setShowOpportunityModal(true)}>+ New Opportunity</Button>
+            <Button size="sm" onClick={() => setShowOpportunityModal(true)} className="text-xs font-bold shrink-0 self-start sm:self-auto">+ New Opportunity</Button>
           </div>
           <KanbanBoard
             opportunities={opportunities}
@@ -319,23 +319,30 @@ function MainApp() {
       )}
 
       {currentPage === 'followups' && (
-        <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Follow-up Management</h3>
-            <Button size="sm" onClick={() => setShowFollowupModal(true)}>+ New Follow-up</Button>
+        <div className="p-4 sm:p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Follow-up Management</h3>
+              <p className="text-xs text-slate-500">Track client touchpoints and critical BD deadlines</p>
+            </div>
+            <Button size="sm" onClick={() => setShowFollowupModal(true)} className="text-xs font-bold shrink-0 self-start sm:self-auto">+ New Follow-up</Button>
           </div>
           <div className="space-y-3">
-            {followups.map((f) => (
-              <div key={f.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <div>
-                  <h5 className="text-sm font-bold text-slate-900 dark:text-white">{f.title}</h5>
-                  <p className="text-xs text-slate-400">{f.client?.company?.name} &bull; Due: {f.dueDate ? new Date(f.dueDate).toLocaleDateString() : 'N/A'}</p>
+            {followups.length === 0 ? (
+              <p className="text-center text-xs text-slate-400 py-8">No pending follow-ups</p>
+            ) : (
+              followups.map((f) => (
+                <div key={f.id} className="p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                  <div className="min-w-0 flex-1">
+                    <h5 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{f.title}</h5>
+                    <p className="text-xs text-slate-400 truncate">{f.client?.company?.name} &bull; Due: {f.dueDate ? new Date(f.dueDate).toLocaleDateString() : 'N/A'}</p>
+                  </div>
+                  <Button size="sm" variant={f.status === 'COMPLETED' ? 'outline' : 'primary'} onClick={async () => { await api.completeFollowup(f.id); loadData(); }} className="text-xs shrink-0">
+                    {f.status === 'COMPLETED' ? 'Completed' : 'Mark Done'}
+                  </Button>
                 </div>
-                <Button size="sm" variant={f.status === 'COMPLETED' ? 'outline' : 'primary'} onClick={async () => { await api.completeFollowup(f.id); loadData(); }}>
-                  {f.status === 'COMPLETED' ? 'Completed' : 'Mark Done'}
-                </Button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}

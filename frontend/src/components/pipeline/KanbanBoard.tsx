@@ -44,7 +44,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   };
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-6 min-h-[600px]">
+    <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-6 min-h-[500px] snap-x snap-mandatory -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-thin">
       {STAGES.map((stage) => {
         const stageOpps = opportunities.filter((o) => o.stage === stage.id);
         const stageTotal = stageOpps.reduce((sum, o) => sum + o.value, 0);
@@ -52,7 +52,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         return (
           <div
             key={stage.id}
-            className="w-72 shrink-0 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[750px]"
+            className="w-[82vw] sm:w-72 shrink-0 snap-center bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[750px]"
           >
             {/* Column Header */}
             <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
@@ -66,7 +66,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               </div>
               <button
                 onClick={() => onNewOpportunity(stage.id)}
-                className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500"
+                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+                aria-label="Add deal to stage"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -76,7 +77,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             <div className="p-3 flex-1 overflow-y-auto space-y-3">
               {stageOpps.length === 0 ? (
                 <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                  No deals
+                  No deals in this stage
                 </div>
               ) : (
                 stageOpps.map((opp) => {
@@ -85,7 +86,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     <div
                       key={opp.id}
                       onClick={() => onOpenOpportunity(opp)}
-                      className="p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs hover:shadow-md cursor-pointer transition-all space-y-2.5"
+                      className="p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs hover:shadow-md cursor-pointer transition-all space-y-2.5 active:scale-[0.99]"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <h5 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2">
@@ -111,7 +112,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                               handleAdvanceStage(opp, next);
                             }}
                             title={`Advance to ${next}`}
-                            className="p-1 text-slate-400 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                            className="p-1 text-slate-400 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                           >
                             <ArrowRight className="w-3.5 h-3.5" />
                           </button>

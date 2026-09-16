@@ -42,57 +42,57 @@ export const ReportsPage: React.FC = () => {
   const pipelineStages = metrics.chartData?.pipelineDistribution || [];
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-4 sm:space-y-6 pb-12">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-brand-500" />
             Executive Reports & Analytics
           </h2>
           <p className="text-xs text-slate-500">Business development conversion funnel, pipeline velocity, and team performance</p>
         </div>
-        <Button variant="outline" size="sm" onClick={exportReport} icon={<Download className="w-4 h-4" />}>
-          Export Report Data (CSV)
+        <Button variant="outline" size="sm" onClick={exportReport} icon={<Download className="w-4 h-4" />} className="text-xs shrink-0 self-start sm:self-auto">
+          Export Report (CSV)
         </Button>
       </div>
 
       {/* Top High-Level Summary Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Pipeline</p>
-          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+          <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Pipeline</p>
+          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">
             ${(metrics.totalPipelineValue / 1000).toFixed(1)}k
           </h3>
-          <p className="text-xs text-emerald-600 font-semibold mt-1">
-            {metrics.openOpportunities} Active Opportunities
+          <p className="text-xs text-emerald-600 font-semibold mt-1 truncate">
+            {metrics.openOpportunities} Deals
           </p>
         </div>
 
-        <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Win Rate</p>
-          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+        <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+          <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Win Rate</p>
+          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">
             {metrics.winRate}%
           </h3>
-          <p className="text-xs text-slate-400 mt-1">Proposal to Closed ratio</p>
+          <p className="text-xs text-slate-400 mt-1 truncate">Proposal to Closed</p>
         </div>
 
-        <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Accounts</p>
-          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+        <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+          <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Accounts</p>
+          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">
             {metrics.totalClients}
           </h3>
-          <p className="text-xs text-brand-500 font-semibold mt-1">
-            {metrics.activeClients} Active Relationships
+          <p className="text-xs text-brand-500 font-semibold mt-1 truncate">
+            {metrics.activeClients} Active
           </p>
         </div>
 
-        <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Overdue Tasks</p>
-          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+        <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+          <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Overdue Tasks</p>
+          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">
             {metrics.overdueFollowups}
           </h3>
-          <p className="text-xs text-rose-500 font-semibold mt-1">Action required</p>
+          <p className="text-xs text-rose-500 font-semibold mt-1 truncate">Action required</p>
         </div>
       </div>
 

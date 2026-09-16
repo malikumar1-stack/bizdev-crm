@@ -334,15 +334,15 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Admin & System Settings</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Admin & System Settings</h2>
         <p className="text-xs text-slate-500">JS Investments BD CRM system health, WhatsApp integration, user roles, and delivery logs</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1 overflow-x-auto whitespace-nowrap scrollbar-none">
         {isAdmin && (
           <button
             onClick={() => setActiveTab('HEALTH')}

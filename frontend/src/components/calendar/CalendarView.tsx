@@ -84,8 +84,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {viewMode === 'month' ? (
-        <div className="p-4">
-          <div className="grid grid-cols-7 gap-px bg-slate-200 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 text-xs">
+        <div className="p-2 sm:p-4 overflow-x-auto">
+          <div className="min-w-[600px] sm:min-w-0 grid grid-cols-7 gap-px bg-slate-200 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 text-xs">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
               <div key={d} className="bg-slate-50 dark:bg-slate-900 p-2 font-bold text-center text-slate-500">
                 {d}
@@ -100,7 +100,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 <div
                   key={day.toISOString()}
                   className={clsx(
-                    "min-h-[110px] p-2 bg-white dark:bg-slate-900 flex flex-col justify-between transition-colors",
+                    "min-h-[90px] sm:min-h-[110px] p-1.5 sm:p-2 bg-white dark:bg-slate-900 flex flex-col justify-between transition-colors",
                     isToday(day) && "bg-brand-50/40 dark:bg-brand-950/20"
                   )}
                 >
@@ -149,15 +149,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             <div
               key={m.id}
               onClick={() => onSelectEvent('meeting', m.id)}
-              className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer flex items-center justify-between gap-4"
+              className="p-3.5 sm:p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer flex items-center justify-between gap-3 flex-wrap"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs shrink-0">
                   {format(new Date(m.startTime), 'dd MMM')}
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">{m.title}</h4>
-                  <p className="text-xs text-slate-500">{m.client?.company?.name} &bull; {format(new Date(m.startTime), 'hh:mm a')}</p>
+                <div className="min-w-0">
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white truncate">{m.title}</h4>
+                  <p className="text-xs text-slate-500 truncate">{m.client?.company?.name} &bull; {format(new Date(m.startTime), 'hh:mm a')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">

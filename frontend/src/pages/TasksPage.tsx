@@ -87,29 +87,29 @@ export const TasksPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <CheckSquare className="w-5 h-5 text-brand-500" />
             Task Management
           </h2>
           <p className="text-xs text-slate-500">Action items, operational deliverables, and post-meeting assignments</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} icon={<Plus className="w-4 h-4" />}>
+        <Button onClick={() => setShowCreateModal(true)} icon={<Plus className="w-4 h-4" />} className="text-xs font-bold shrink-0 self-start sm:self-auto">
           + Create Task
         </Button>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
-        <div className="flex items-center gap-1.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap pb-1 sm:pb-0 scrollbar-none">
           {(['ALL', 'TODO', 'IN_PROGRESS', 'COMPLETED'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
                 filter === tab
                   ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'

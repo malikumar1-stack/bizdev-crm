@@ -12,7 +12,7 @@ import {
   Settings,
   UserCircle,
   LogOut,
-  Building2
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { JSILogo } from '../common/JSILogo';
@@ -21,9 +21,16 @@ import { clsx } from 'clsx';
 interface SidebarProps {
   currentPage: string;
   onNavigate: (page: string) => void;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentPage,
+  onNavigate,
+  isMobileOpen = false,
+  onCloseMobile
+}) => {
   const { user, logout } = useAuth();
 
   const navItems = [
@@ -40,11 +47,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => 
     { id: 'settings', label: 'Settings', icon: Settings }
   ];
 
-  return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0 min-h-screen border-r border-slate-800">
+  const handleItemClick = (id: string) => {
+    onNavigate(id);
+    if (onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
+  const sidebarContent = (
+    <>
       {/* Brand Header */}
-      <div className="p-5 flex items-center border-b border-slate-800">
+      <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-800">
         <JSILogo size="md" />
+        {onCloseMobile && (
+          <button
+            onClick={onCloseMobile}
+            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 md:hidden"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Navigation Links */}
@@ -56,15 +79,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => 
           return (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => handleItemClick(item.id)}
               className={clsx(
-                'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-left',
+                'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left active:scale-[0.98]',
                 isActive
                   ? 'bg-brand-600 text-white shadow-sm font-semibold'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
               )}
             >
-              <Icon className={clsx('w-5 h-5', isActive ? 'text-white' : 'text-slate-400')} />
+              <Icon className={clsx('w-5 h-5 shrink-0', isActive ? 'text-white' : 'text-slate-400')} />
               <span>{item.label}</span>
             </button>
           );
@@ -75,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => 
       <div className="p-4 border-t border-slate-800 bg-slate-950/40">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => onNavigate('profile')}
+            onClick={() => handleItemClick('profile')}
             className="flex items-center gap-3 min-w-0 text-left hover:opacity-80 transition-opacity"
           >
             <div className="w-9 h-9 rounded-full bg-brand-700 text-white font-semibold flex items-center justify-center text-sm uppercase shrink-0 border border-brand-500/40">
@@ -89,12 +112,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => 
           <button
             onClick={logout}
             title="Sign out"
-            className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
           >
             <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar */}
+      <aside className="hidden md:flex w-64 bg-slate-900 text-white flex-col shrink-0 min-h-screen border-r border-slate-800">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Slide-Out Drawer Overlay */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity duration-200"
+            onClick={onCloseMobile}
+          />
+          {/* Slide-out Panel */}
+          <aside className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-slate-900 text-white flex flex-col shadow-2xl border-r border-slate-800 z-10 transform transition-transform duration-200 animate-in slide-in-from-left">
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+    </>
   );
 };
