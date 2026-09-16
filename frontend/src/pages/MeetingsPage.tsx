@@ -4,7 +4,7 @@ import { IMeeting, IMeetingReminder } from '../types';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { PostMeetingDrawer } from '../components/meetings/PostMeetingDrawer';
-import { Calendar, Plus, MessageSquare, AlertCircle, CheckCircle2, Clock, User, Building } from 'lucide-react';
+import { Calendar, Plus, MessageSquare, AlertCircle, CheckCircle2, Clock, User, Building, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface MeetingsPageProps {
@@ -28,6 +28,19 @@ export const MeetingsPage: React.FC<MeetingsPageProps> = ({ onOpenSchedule }) =>
       console.error('Failed to load meetings:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteMeeting = async (id: string, title: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${title}"? This will cancel its scheduled WhatsApp reminders.`)) {
+      return;
+    }
+    try {
+      setMeetings(prev => prev.filter(m => m.id !== id));
+      await api.deleteMeeting(id);
+    } catch (err) {
+      console.error('Failed to delete meeting:', err);
+      fetchMeetings();
     }
   };
 
@@ -161,19 +174,30 @@ export const MeetingsPage: React.FC<MeetingsPageProps> = ({ onOpenSchedule }) =>
             )}
 
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const phone = (m.assignedUser?.whatsappNumber || m.assignedUser?.phone || m.client?.primaryContact?.whatsapp || m.client?.primaryContact?.phone || '').replace(/\D/g, '');
-                  const formattedTime = format(new Date(m.startTime), 'dd MMM yyyy, hh:mm a');
-                  const msg = `*JS Investments Meeting Reminder*\n\n*Client:* ${m.client?.company?.name || 'Client'}\n*Contact:* ${m.client?.primaryContact?.name || 'Stakeholder'}\n*Date & Time:* ${formattedTime} PKT\n*Format:* ${m.meetingType}\n*Location:* ${m.location || m.meetingLink || 'Office'}\n*Agenda:* ${m.agenda || 'Business Development Discussion'}\n\nPlease review client notes prior to the meeting.`;
-                  window.open(`https://wa.me/${phone || ''}?text=${encodeURIComponent(msg)}`, '_blank');
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-100 transition-all"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>WhatsApp Briefing</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const phone = (m.assignedUser?.whatsappNumber || m.assignedUser?.phone || m.client?.primaryContact?.whatsapp || m.client?.primaryContact?.phone || '').replace(/\D/g, '');
+                    const formattedTime = format(new Date(m.startTime), 'dd MMM yyyy, hh:mm a');
+                    const msg = `*JS Investments Meeting Reminder*\n\n*Client:* ${m.client?.company?.name || 'Client'}\n*Contact:* ${m.client?.primaryContact?.name || 'Stakeholder'}\n*Date & Time:* ${formattedTime} PKT\n*Format:* ${m.meetingType}\n*Location:* ${m.location || m.meetingLink || 'Office'}\n*Agenda:* ${m.agenda || 'Business Development Discussion'}\n\nPlease review client notes prior to the meeting.`;
+                    window.open(`https://wa.me/${phone || ''}?text=${encodeURIComponent(msg)}`, '_blank');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-100 transition-all"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>WhatsApp Briefing</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDeleteMeeting(m.id, m.title)}
+                  title="Delete Meeting"
+                  className="p-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
 
               {m.status === 'SCHEDULED' && (
                 <Button size="sm" onClick={() => setCompletingMeeting(m)}>

@@ -57,7 +57,7 @@ router.get('/meetings/:id', MeetingController.getMeetingById);
 router.put('/meetings/:id', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), MeetingController.updateMeeting);
 router.post('/meetings/:id/workflow', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), MeetingController.completeWorkflow);
 router.post('/meetings/:id/complete-workflow', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), MeetingController.completeWorkflow);
-router.delete('/meetings/:id', requireRole('ADMIN', 'MANAGER'), MeetingController.deleteMeeting);
+router.delete('/meetings/:id', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), MeetingController.deleteMeeting);
 
 // Follow-ups
 router.get('/followups', FollowupController.getFollowups);
@@ -130,6 +130,7 @@ router.get('/settings/diagnostics', requireRole('ADMIN'), SettingController.getD
 router.get('/settings/reminder-logs', requireRole('ADMIN', 'MANAGER'), SettingController.getReminderLogs);
 router.get('/settings/notification-logs', SettingController.getNotificationLogs);
 router.get('/settings/audit-logs', requireRole('ADMIN', 'MANAGER'), SettingController.getAuditLogs);
+router.post('/settings/reset-test-data', requireRole('ADMIN'), SettingController.resetTestData);
 router.post('/scheduler/trigger', NotificationController.triggerScheduler);
 
 export default router;

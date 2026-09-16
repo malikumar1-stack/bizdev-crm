@@ -473,4 +473,28 @@ export class SettingController {
       return sendError(res, err.message);
     }
   }
+
+  static async resetTestData(req: AuthRequest, res: Response) {
+    try {
+      if (req.user?.role !== 'ADMIN') {
+        return sendError(res, 'Only Administrator can reset test data', 403);
+      }
+
+      // Clean test reminders, meetings, followups, tasks, and notification logs
+      await prisma.meetingReminder.deleteMany();
+      await prisma.meetingParticipant.deleteMany();
+      await prisma.meeting.deleteMany();
+      await prisma.followup.deleteMany();
+      await prisma.task.deleteMany();
+      await prisma.notification.deleteMany();
+      await prisma.notificationLog.deleteMany();
+      await prisma.activity.deleteMany();
+
+      AuditService.log(req.user!.id, 'RESET_TEST_DATA', 'SYSTEM', 'all');
+
+      return sendSuccess(res, null, 'Test meetings, reminders, follow-ups, and logs have been completely reset to a clean state!');
+    } catch (err: any) {
+      return sendError(res, err.message, 500);
+    }
+  }
 }

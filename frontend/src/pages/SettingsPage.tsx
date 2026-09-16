@@ -19,7 +19,8 @@ import {
   Clock,
   Check,
   AlertTriangle,
-  Play
+  Play,
+  Trash2
 } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
@@ -314,6 +315,24 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
+  const [resetLoading, setResetLoading] = useState(false);
+  const handleResetTestData = async () => {
+    if (!window.confirm('Are you sure you want to reset all test meetings, reminders, follow-ups, and logs? Your team logins and client companies will remain safe.')) {
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await api.resetTestData();
+      alert('✓ All test meetings, reminders, and logs have been reset to a clean state!');
+      loadDiagnostics();
+      loadReminderLogs();
+    } catch (err: any) {
+      alert('✕ Reset failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -537,6 +556,27 @@ export const SettingsPage: React.FC = () => {
                     <span className="text-base font-bold text-rose-700 dark:text-rose-300">{diagnostics.metrics.failedTodayCount}</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Card 4: Clean Slate & Reset Test Data */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 lg:col-span-3 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>🧹 Reset Test Data to Clean State</span>
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Clear all past test meetings, reminders, follow-ups, and diagnostic logs to start completely fresh for your team. Team user logins and client records will remain safe.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={resetLoading}
+                  onClick={handleResetTestData}
+                  className="px-4 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-all flex items-center gap-2 shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>{resetLoading ? 'Cleaning Database...' : 'Reset All Test Meetings & Logs'}</span>
+                </button>
               </div>
             </div>
           ) : (

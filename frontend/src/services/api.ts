@@ -111,6 +111,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(meeting)
     }),
+  updateMeeting: (id: string, meeting: any) =>
+    request<IMeeting>(`/meetings/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(meeting)
+    }),
+  deleteMeeting: (id: string) =>
+    request<void>(`/meetings/${id}`, {
+      method: 'DELETE'
+    }),
   completeMeetingWorkflow: (id: string, payload: any) =>
     request<any>(`/meetings/${id}/workflow`, {
       method: 'POST',
@@ -128,6 +137,10 @@ export const api = {
     request<IFollowup>(`/followups/${id}/complete`, {
       method: 'PATCH'
     }),
+  deleteFollowup: (id: string) =>
+    request<void>(`/followups/${id}`, {
+      method: 'DELETE'
+    }),
   getTasks: () => request<ITask[]>('/tasks'),
   createTask: (task: any) =>
     request<ITask>('/tasks', {
@@ -138,6 +151,10 @@ export const api = {
     request<ITask>(`/tasks/${id}`, {
       method: 'PUT',
       body: JSON.stringify(task)
+    }),
+  deleteTask: (id: string) =>
+    request<void>(`/tasks/${id}`, {
+      method: 'DELETE'
     }),
 
   // Opportunities / Pipeline
@@ -262,5 +279,9 @@ export const api = {
     request<any>('/import-export/process', {
       method: 'POST',
       body: JSON.stringify(payload)
+    }),
+  resetTestData: () =>
+    request<any>('/settings/reset-test-data', {
+      method: 'POST'
     })
 };
