@@ -74,32 +74,108 @@ export class WhatsAppProvider implements INotificationProvider {
       };
     }
 
-    // 4. Dispatch Official Meta WhatsApp Cloud API Request
+    // 4. Dispatch Request (Supports Meta Cloud API, UltraMsg, or Green API)
     try {
-      const endpoint = `${apiUrl}/${phoneNumberId}/messages`;
+      // Case A: UltraMsg Gateway (Scan QR Code from any phone, 100% Free & No Meta restrictions)
+      if (apiUrl.includes('ultramsg.com')) {
+        const ultraEndpoint = apiUrl.endsWith('/chat') ? apiUrl : `${apiUrl.replace(/\/+$/, '')}/messages/chat`;
+        logger.info(`[WHATSAPP ULTRAMSG DISPATCH] Sending to ${normPhone.e164} via ${ultraEndpoint}`);
 
+        const response = await fetch(ultraEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: apiKey.trim(),
+            to: normPhone.e164,
+            body: `*${payload.title}*\n\n${payload.message}`
+          })
+        });
+
+        const responseData: any = await response.json();
+        if (!response.ok || responseData.error) {
+          const err = responseData.error || responseData.message || `HTTP ${response.status}`;
+          logger.error(`[WHATSAPP ULTRAMSG ERROR] ${err}`);
+          return {
+            success: false,
+            channel: this.name,
+            error: `UltraMsg Gateway error: ${err}`,
+            details: { statusCode: response.status, recipient: normPhone.e164, data: responseData }
+          };
+        }
+
+        const msgId = responseData.id || `UM-${Date.now()}`;
+        return {
+          success: true,
+          channel: this.name,
+          details: { mode: 'ultramsg_gateway', providerMessageId: String(msgId), recipient: normPhone.e164 }
+        };
+      }
+
+      // Case B: Green API Gateway (Scan QR Code from phone)
+      if (apiUrl.includes('green-api.com') || apiUrl.includes('greenapi')) {
+        const greenEndpoint = `${apiUrl.replace(/\/+$/, '')}/waInstance${phoneNumberId}/sendMessage/${apiKey.trim()}`;
+        logger.info(`[WHATSAPP GREENAPI DISPATCH] Sending to ${normPhone.e164}`);
+
+        const response = await fetch(greenEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chatId: `${normPhone.apiNumber}@c.us`,
+            message: `*${payload.title}*\n\n${payload.message}`
+          })
+        });
+
+        const responseData: any = await response.json();
+        if (!response.ok || responseData.error) {
+          const err = responseData.error || responseData.message || `HTTP ${response.status}`;
+          return { success: false, channel: this.name, error: `Green API error: ${err}` };
+        }
+
+        return {
+          success: true,
+          channel: this.name,
+          details: { mode: 'green_api', providerMessageId: responseData.idMessage || `GA-${Date.now()}`, recipient: normPhone.e164 }
+        };
+      }
+
+      // Case C: Official Meta WhatsApp Cloud API
+      const endpoint = `${apiUrl}/${phoneNumberId}/messages`;
       let requestBody: any;
 
       if (templateName && templateName.trim() !== '') {
-        // Meta Template message format
-        requestBody = {
-          messaging_product: 'whatsapp',
-          to: normPhone.apiNumber,
-          type: 'template',
-          template: {
-            name: templateName.trim(),
-            language: { code: 'en_US' },
-            components: [
-              {
-                type: 'body',
-                parameters: [
-                  { type: 'text', text: payload.title },
-                  { type: 'text', text: payload.message.slice(0, 1024) }
-                ]
-              }
-            ]
-          }
-        };
+        const tName = templateName.trim();
+        if (tName.toLowerCase() === 'hello_world') {
+          // Default built-in Meta hello_world template
+          requestBody = {
+            messaging_product: 'whatsapp',
+            to: normPhone.apiNumber,
+            type: 'template',
+            template: {
+              name: 'hello_world',
+              language: { code: 'en_US' }
+            }
+          };
+        } else {
+          // Custom business template with dynamic parameters
+          requestBody = {
+            messaging_product: 'whatsapp',
+            to: normPhone.apiNumber,
+            type: 'template',
+            template: {
+              name: tName,
+              language: { code: 'en_US' },
+              components: [
+                {
+                  type: 'body',
+                  parameters: [
+                    { type: 'text', text: payload.title },
+                    { type: 'text', text: payload.message.slice(0, 1024) }
+                  ]
+                }
+              ]
+            }
+          };
+        }
       } else {
         // Freeform text message format (standard for active customer window / test sandbox)
         requestBody = {
