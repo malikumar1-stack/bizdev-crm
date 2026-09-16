@@ -77,8 +77,17 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
   };
 
   
-  const handleExport = (format: 'csv' | 'xlsx') => {
-    window.open(`${api.baseUrl || ''}/api/import-export/export?format=${format}`, '_blank');
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async (format: 'xlsx' | 'csv') => {
+    try {
+      setExporting(true);
+      await api.exportClients(format);
+    } catch (err: any) {
+      alert(err.message || 'Failed to export clients portfolio');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleOpenEdit = (client: IClient, e: React.MouseEvent) => {
@@ -95,12 +104,31 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">Client Portfolio</h2>
           <p className="text-xs text-slate-500">Enterprise accounts, stakeholder contacts, and relationship health</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(true)} icon={<Upload className="w-4 h-4" />}>
-            Import
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsImportModalOpen(true)}
+            icon={<Upload className="w-4 h-4 text-[#002D62] dark:text-blue-400" />}
+          >
+            Import Spreadsheet
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('csv')} icon={<Download className="w-4 h-4" />}>
-            Export CSV
+          <Button
+            variant="outline"
+            size="sm"
+            loading={exporting}
+            onClick={() => handleExport('xlsx')}
+            icon={<Download className="w-4 h-4 text-emerald-600" />}
+          >
+            Export Excel (.xlsx)
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            loading={exporting}
+            onClick={() => handleExport('csv')}
+          >
+            CSV
           </Button>
           <Button
             size="sm"
@@ -279,6 +307,14 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
         }}
         clientToEdit={clientToEdit}
         onSaved={loadClients}
+        usersList={usersList}
+      />
+
+      {/* Import Modal */}
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={loadClients}
         usersList={usersList}
       />
     </div>

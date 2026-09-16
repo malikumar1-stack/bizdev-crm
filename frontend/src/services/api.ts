@@ -266,7 +266,7 @@ export const api = {
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(`${API_BASE}/import-export/upload`, {
+    const res = await fetch(`${API_BASE}/import-export/parse`, {
       method: 'POST',
       headers,
       body: formData
@@ -275,11 +275,58 @@ export const api = {
     if (!res.ok) throw new Error(data.message || 'File parsing failed');
     return data.data || data;
   },
-  processImport: (payload: { rows: any[]; mapping: Record<string, string> }) =>
+  processImport: (payload: { rows: any[]; mapping: Record<string, string>; defaultAssignedUserId?: string }) =>
     request<any>('/import-export/process', {
       method: 'POST',
       body: JSON.stringify(payload)
     }),
+  exportClients: async (format: 'xlsx' | 'csv' = 'xlsx') => {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE}/import-export/export?format=${format}`, {
+      method: 'GET',
+      headers
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to export clients');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const dateStr = new Date().toISOString().split('T')[0];
+    a.download = `JS_Investments_Clients_${dateStr}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+  downloadImportTemplate: async (format: 'xlsx' | 'csv' = 'xlsx') => {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE}/import-export/template?format=${format}`, {
+      method: 'GET',
+      headers
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to download template');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `JS_Investments_Clients_Import_Template.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
   resetTestData: () =>
     request<any>('/settings/reset-test-data', {
       method: 'POST'

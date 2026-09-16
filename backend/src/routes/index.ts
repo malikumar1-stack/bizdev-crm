@@ -107,8 +107,11 @@ router.get('/ai/insights/:clientId', AIController.getClientInsights);
 
 // Import & Export
 router.post('/import-export/parse', ImportExportController.uploadMiddleware, ImportExportController.parseUpload);
+router.post('/import-export/upload', ImportExportController.uploadMiddleware, ImportExportController.parseUpload);
 router.post('/import-export/process', requireRole('ADMIN', 'MANAGER', 'BD_EXECUTIVE'), ImportExportController.processImport);
 router.get('/import-export/export-clients', ImportExportController.exportClients);
+router.get('/import-export/export', ImportExportController.exportClients);
+router.get('/import-export/template', ImportExportController.downloadTemplate);
 
 // User Management (Admin)
 router.get('/users', UserController.getUsers);
